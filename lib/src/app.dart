@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:powerpulse/src/methods/methods.dart';
 
 import 'sample_feature/sample_item_details_view.dart';
 import 'sample_feature/sample_item_list_view.dart';
+import 'methods/method_list_view.dart';
+import 'methods/method_page.dart';
 import 'settings/settings_controller.dart';
 import 'settings/settings_view.dart';
 
@@ -63,6 +66,10 @@ class MyApp extends StatelessWidget {
           // Define a function to handle named routes in order to support
           // Flutter web url navigation and deep linking.
           onGenerateRoute: (RouteSettings routeSettings) {
+            //ModalRoute.of(context)?.settings.arguments
+            final arguments =
+                (routeSettings.arguments ?? <String, dynamic>{}) as Map;
+
             return MaterialPageRoute<void>(
               settings: routeSettings,
               builder: (BuildContext context) {
@@ -71,9 +78,45 @@ class MyApp extends StatelessWidget {
                     return SettingsView(controller: settingsController);
                   case SampleItemDetailsView.routeName:
                     return const SampleItemDetailsView();
+                  case 'IV':
+                    if (arguments.isEmpty) {
+                      return const MethodListView(type: 'IV');
+                    } else {
+                      return MethodPage(
+                          type: 'IV',
+                          id: arguments['id'],
+                          title: arguments['title']);
+                    }
+                  case 'EIS':
+                    if (arguments.isEmpty) {
+                      return const MethodListView(type: 'EIS');
+                    } else {
+                      return MethodPage(
+                          type: 'EIS',
+                          id: arguments['id'],
+                          title: arguments['title']);
+                    }
+                  case 'Pulse':
+                    if (arguments.isEmpty) {
+                      return const MethodListView(type: 'Pulse');
+                    } else {
+                      return MethodPage(
+                          type: 'Pulse',
+                          id: arguments['id'],
+                          title: arguments['title']);
+                    }
+                  case 'Battery':
+                    if (arguments.isEmpty) {
+                      return const MethodListView(type: 'Battery');
+                    } else {
+                      return MethodPage(
+                          type: 'Battery',
+                          id: arguments['id'],
+                          title: arguments['title']);
+                    }
                   case SampleItemListView.routeName:
                   default:
-                    return const SampleItemListView();
+                    return const Methods();
                 }
               },
             );
