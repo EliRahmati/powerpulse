@@ -9,6 +9,9 @@ import 'methods/method_list_view.dart';
 import 'methods/method_page.dart';
 import 'settings/settings_controller.dart';
 import 'settings/settings_view.dart';
+import 'screens/login_screen.dart';
+
+import 'globals.dart' as globals;
 
 /// The Widget that configures your application.
 class MyApp extends StatelessWidget {
@@ -116,7 +119,11 @@ class MyApp extends StatelessWidget {
                     }
                   case SampleItemListView.routeName:
                   default:
-                    return const Methods();
+                    if (globals.user != null) {
+                      return const Methods();
+                    } else {
+                      return LoginScreen();
+                    }
                 }
               },
             );
