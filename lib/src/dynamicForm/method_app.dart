@@ -2,24 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:sidebarx/sidebarx.dart';
 import 'package:powerpulse/src/devices/devices_view.dart';
 import 'package:powerpulse/src/settings/settings_view.dart';
-import 'method.dart';
-import 'method_list_view.dart';
 
-class Methods extends StatelessWidget {
-  Methods({
-    super.key,
-    this.methods = const [
-      MethodType('IV'),
-      MethodType('EIS'),
-      MethodType('Pulse'),
-      MethodType('Battery')
-    ],
-  });
-  static const routeName = '/';
-  static const title = 'PowerPulse';
+class MethodApp extends StatelessWidget {
+  MethodApp(
+      {Key? key, required this.type, required this.id, required this.title})
+      : super(key: key);
+  static const routeName = '/method';
   final _controller = SidebarXController(selectedIndex: 0, extended: true);
   final _key = GlobalKey<ScaffoldState>();
-  final List<MethodType> methods;
+
+  final String type;
+  final String id;
+  final String title;
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +22,7 @@ class Methods extends StatelessWidget {
       key: _key,
       appBar: AppBar(
         backgroundColor: canvasColor,
-        title: const Text(title),
+        title: Text(type + ' ' + title),
         leading: isSmallScreen
             ? Row(
                 children: <Widget>[
@@ -67,16 +61,14 @@ class Methods extends StatelessWidget {
           ),
         ],
       ),
-      drawer: MethodsSidebar(controller: _controller, methods: methods),
+      drawer: MethodSidebar(controller: _controller),
       body: Row(
         children: [
-          if (!isSmallScreen)
-            MethodsSidebar(controller: _controller, methods: methods),
+          if (!isSmallScreen) MethodSidebar(controller: _controller),
           Expanded(
             child: Center(
-              child: _MethodsListView(
+              child: _ScreensExample(
                 controller: _controller,
-                methods: methods,
               ),
             ),
           ),
@@ -86,17 +78,14 @@ class Methods extends StatelessWidget {
   }
 }
 
-class MethodsSidebar extends StatelessWidget {
-  MethodsSidebar({
+class MethodSidebar extends StatelessWidget {
+  const MethodSidebar({
     Key? key,
     required SidebarXController controller,
-    required this.methods,
   })  : _controller = controller,
         super(key: key);
 
   final SidebarXController _controller;
-  final List<MethodType> methods;
-  final _key = GlobalKey<ScaffoldState>();
 
   @override
   Widget build(BuildContext context) {
@@ -161,61 +150,74 @@ class MethodsSidebar extends StatelessWidget {
           ),
         );
       },
-      items: methods.map((method) {
-            return SidebarXItem(
-              icon: Icons.analytics,
-              label: method.methodName,
-              onTap: () {
-                // if (!Platform.isAndroid && !Platform.isIOS) {
-                //   _controller.setExtended(true);
-                // }
-                _key.currentState?.openDrawer();
-              },
-            );
-          }).toList() +
-          [
-            SidebarXItem(
-              icon: Icons.settings,
-              label: 'Settings',
-              selectable: false,
-              onTap: () => Navigator.restorablePushNamed(
-                  context, SettingsView.routeName),
-            ),
-            SidebarXItem(
-              icon: Icons.device_unknown,
-              label: 'Devices',
-              selectable: false,
-              onTap: () => Navigator.restorablePushNamed(
-                  context, DeviceScanner.routeName),
-            ),
-            SidebarXItem(
-              icon: Icons.exit_to_app,
-              label: 'Exit',
-              selectable: false,
-              onTap: () => Navigator.of(context).pop(),
-            ),
-          ],
+      items: [
+        const SidebarXItem(
+          icon: Icons.input,
+          label: 'Inputs',
+        ),
+        const SidebarXItem(
+          icon: Icons.analytics,
+          label: 'Figure',
+        ),
+        SidebarXItem(
+          icon: Icons.settings,
+          label: 'Settings',
+          selectable: false,
+          onTap: () =>
+              Navigator.restorablePushNamed(context, SettingsView.routeName),
+        ),
+        SidebarXItem(
+          icon: Icons.device_unknown,
+          label: 'Devices',
+          selectable: false,
+          onTap: () =>
+              Navigator.restorablePushNamed(context, DeviceScanner.routeName),
+        ),
+        SidebarXItem(
+          icon: Icons.exit_to_app,
+          label: 'Exit',
+          selectable: false,
+          onTap: () => Navigator.of(context).pop(),
+        ),
+      ],
     );
   }
 }
 
-class _MethodsListView extends StatelessWidget {
-  const _MethodsListView({
+class _ScreensExample extends StatelessWidget {
+  const _ScreensExample({
     Key? key,
     required this.controller,
-    required this.methods,
   }) : super(key: key);
 
   final SidebarXController controller;
-  final List<MethodType> methods;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return AnimatedBuilder(
       animation: controller,
       builder: (context, child) {
-        return MethodListView(
-            type: methods[controller.selectedIndex].methodName);
+        switch (controller.selectedIndex) {
+          case 0:
+            return ListView.builder(
+              padding: const EdgeInsets.only(top: 10),
+              itemCount: 20,
+              itemBuilder: (context, index) => Container(
+                height: 100,
+                width: double.infinity,
+                constraints: const BoxConstraints(maxWidth: 200),
+                margin: const EdgeInsets.only(bottom: 10, right: 10, left: 10),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  color: Colors.deepOrangeAccent,
+                  boxShadow: const [BoxShadow()],
+                ),
+              ),
+            );
+          default:
+            return Text('Not implemented yet.');
+        }
       },
     );
   }

@@ -10,8 +10,20 @@ import 'methods/method_page.dart';
 import 'settings/settings_controller.dart';
 import 'settings/settings_view.dart';
 import 'screens/login_screen.dart';
+import 'package:powerpulse/src/devices/device_view.dart';
+import 'package:powerpulse/src/devices/devices_view.dart';
+import 'package:powerpulse/src/dynamicForm/dynamicForm.dart';
+import 'package:powerpulse/src/dynamicForm/method_app.dart';
 
 import 'globals.dart' as globals;
+
+const primaryColor = Color(0xFF685BFF);
+const canvasColor = Color(0xFF2E2E48);
+const scaffoldBackgroundColor = Color(0xFF464667);
+const accentCanvasColor = Color(0xFF3E3E61);
+const white = Colors.white;
+final actionColor = const Color(0xFF5F5FA7).withOpacity(0.6);
+final divider = Divider(color: white.withOpacity(0.3), height: 1);
 
 /// The Widget that configures your application.
 class MyApp extends StatelessWidget {
@@ -63,6 +75,18 @@ class MyApp extends StatelessWidget {
           // preferred ThemeMode (light, dark, or system default) from the
           // SettingsController to display the correct theme.
           theme: ThemeData(),
+          // theme: ThemeData(
+          //   primaryColor: primaryColor,
+          //   canvasColor: canvasColor,
+          //   scaffoldBackgroundColor: scaffoldBackgroundColor,
+          //   textTheme: const TextTheme(
+          //     headlineSmall: TextStyle(
+          //       color: Colors.white,
+          //       fontSize: 46,
+          //       fontWeight: FontWeight.w800,
+          //     ),
+          //   ),
+          // ),
           darkTheme: ThemeData.dark(),
           themeMode: settingsController.themeMode,
 
@@ -81,46 +105,56 @@ class MyApp extends StatelessWidget {
                     return SettingsView(controller: settingsController);
                   case SampleItemDetailsView.routeName:
                     return const SampleItemDetailsView();
-                  case 'IV':
+                  case DeviceScanner.routeName:
+                    return DeviceScanner();
+                  case DeviceInfoView.routeName:
                     if (arguments.isEmpty) {
-                      return const MethodListView(type: 'IV');
+                      return const DeviceInfoView(ip: null, deviceName: null);
                     } else {
-                      return MethodPage(
-                          type: 'IV',
-                          id: arguments['id'],
-                          title: arguments['title']);
+                      return DeviceInfoView(
+                          ip: arguments['ip'],
+                          deviceName: arguments['deviceName']);
                     }
-                  case 'EIS':
-                    if (arguments.isEmpty) {
-                      return const MethodListView(type: 'EIS');
-                    } else {
-                      return MethodPage(
-                          type: 'EIS',
-                          id: arguments['id'],
-                          title: arguments['title']);
-                    }
-                  case 'Pulse':
-                    if (arguments.isEmpty) {
-                      return const MethodListView(type: 'Pulse');
-                    } else {
-                      return MethodPage(
-                          type: 'Pulse',
-                          id: arguments['id'],
-                          title: arguments['title']);
-                    }
-                  case 'Battery':
-                    if (arguments.isEmpty) {
-                      return const MethodListView(type: 'Battery');
-                    } else {
-                      return MethodPage(
-                          type: 'Battery',
-                          id: arguments['id'],
-                          title: arguments['title']);
-                    }
-                  case SampleItemListView.routeName:
+                  case MethodApp.routeName:
+                    return MethodApp(
+                        type: arguments['type'],
+                        id: arguments['id'],
+                        title: arguments['title']);
                   default:
+                    // return SidebarXExampleApp();
+                    // return const DynamicForm(schema: {
+                    //   "title": "Sample Form",
+                    //   "type": "object",
+                    //   "properties": {
+                    //     "name": {
+                    //       "type": "string",
+                    //       "title": "My Name",
+                    //       "description": "Enter your full name."
+                    //     },
+                    //     "time": {
+                    //       "type": "number",
+                    //       "title": "My Time",
+                    //       "description": "Enter time."
+                    //     },
+                    //     "int": {
+                    //       "type": "integer",
+                    //       "title": "My int",
+                    //       "description": "Enter time."
+                    //     },
+                    //     "bool": {
+                    //       "type": "boolean",
+                    //       "title": "My bool",
+                    //       "description": "Enter time."
+                    //     }
+                    //   }
+                    // }, data: {
+                    //   "name": "my name",
+                    //   "time": 5.5,
+                    //   "int": 8,
+                    //   "bool": true,
+                    // });
                     if (globals.user != null) {
-                      return const Methods();
+                      return Methods();
                     } else {
                       return LoginScreen();
                     }

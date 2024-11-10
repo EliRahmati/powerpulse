@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:powerpulse/src/models/device.dart';
+import 'package:collection/collection.dart';
 
 import 'settings_service.dart';
 
@@ -20,11 +22,18 @@ class SettingsController with ChangeNotifier {
   // Allow Widgets to read the user's preferred ThemeMode.
   ThemeMode get themeMode => _themeMode;
 
+  late List<Device> _devices;
+  List<Device> get devices => _devices;
+  late Device? _device;
+  Device? get device => _device;
+
   /// Load the user's settings from the SettingsService. It may load from a
   /// local database or the internet. The controller only knows it can load the
   /// settings from the service.
   Future<void> loadSettings() async {
     _themeMode = await _settingsService.themeMode();
+    _devices = await _settingsService.devices();
+    _device = await _settingsService.device();
 
     // Important! Inform listeners a change has occurred.
     notifyListeners();
@@ -46,5 +55,21 @@ class SettingsController with ChangeNotifier {
     // Persist the changes to a local database or the internet using the
     // SettingService.
     await _settingsService.updateThemeMode(newThemeMode);
+  }
+
+  /// Update and persist the Devices based on the user's selection.
+  Future<void> updateDevices(List<Device>? newDevices) async {
+    if (newDevices == null) return;
+    _devices = newDevices;
+    notifyListeners();
+    await _settingsService.updateDevices(newDevices);
+  }
+
+  Future<void> updateDevice(String? newMac) async {
+    if (newMac == null) return;
+    _device =
+        _devices.firstWhereOrNull((element) => element.macAddress == newMac);
+    notifyListeners();
+    await _settingsService.updateDevice(_device);
   }
 }

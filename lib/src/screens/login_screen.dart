@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:powerpulse/src/utils/register_user.dart';
 import 'package:powerpulse/src/utils/login.dart';
 
 class LoginScreen extends StatefulWidget {

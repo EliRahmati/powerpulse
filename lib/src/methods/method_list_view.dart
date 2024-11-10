@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'package:powerpulse/src/dynamicForm/method_app.dart';
 import '../settings/settings_view.dart';
 import 'method.dart';
 
@@ -39,27 +39,6 @@ class MethodListView extends StatelessWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('List of ${type ?? type}'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              // Navigate to the settings page. If the user leaves and returns
-              // to the app after it has been killed while running in the
-              // background, the navigation stack is restored.
-              Navigator.restorablePushNamed(context, SettingsView.routeName);
-            },
-          ),
-        ],
-      ),
-
-      // To work with lists that may contain a large number of items, it’s best
-      // to use the ListView.builder constructor.
-      //
-      // In contrast to the default ListView constructor, which requires
-      // building all Widgets up front, the ListView.builder constructor lazily
-      // builds Widgets as they’re scrolled into view.
       body: ListView.builder(
         // Providing a restorationId allows the ListView to restore the
         // scroll position when a user leaves and returns to the app after it
@@ -81,8 +60,12 @@ class MethodListView extends StatelessWidget {
                 // background, the navigation stack is restored.
                 Navigator.restorablePushNamed(
                   context,
-                  method != null ? method.type : '/',
-                  arguments: {'id': method?.id, 'title': method?.title},
+                  MethodApp.routeName,
+                  arguments: {
+                    'type': method?.type,
+                    'id': method?.id,
+                    'title': method?.title
+                  },
                 );
               });
         },

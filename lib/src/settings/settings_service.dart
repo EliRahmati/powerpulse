@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:powerpulse/src/models/device.dart';
 
 /// A service that stores and retrieves user settings.
 ///
@@ -14,4 +15,12 @@ class SettingsService {
     // Use the shared_preferences package to persist settings locally or the
     // http package to persist settings over the network.
   }
+
+  Future<Device?> device() async => null;
+
+  Future<void> updateDevice(Device? device) async {}
+
+  Future<List<Device>> devices() async => [];
+
+  Future<void> updateDevices(List<Device> devices) async {}
 }
