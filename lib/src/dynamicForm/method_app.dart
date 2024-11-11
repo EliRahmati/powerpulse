@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sidebarx/sidebarx.dart';
 import 'package:powerpulse/src/devices/devices_view.dart';
 import 'package:powerpulse/src/settings/settings_view.dart';
+import 'package:powerpulse/src/dynamicForm/dynamicForm.dart';
 
 class MethodApp extends StatelessWidget {
   MethodApp(
@@ -200,21 +201,52 @@ class _ScreensExample extends StatelessWidget {
       builder: (context, child) {
         switch (controller.selectedIndex) {
           case 0:
-            return ListView.builder(
-              padding: const EdgeInsets.only(top: 10),
-              itemCount: 20,
-              itemBuilder: (context, index) => Container(
-                height: 100,
-                width: double.infinity,
-                constraints: const BoxConstraints(maxWidth: 200),
-                margin: const EdgeInsets.only(bottom: 10, right: 10, left: 10),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  color: Colors.deepOrangeAccent,
-                  boxShadow: const [BoxShadow()],
-                ),
-              ),
-            );
+            return const DynamicForm(schema: {
+              "title": "Sample Form",
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "title": "My Name",
+                  "description": "Enter your full name."
+                },
+                "time": {
+                  "type": "number",
+                  "title": "My Time",
+                  "description": "Enter time."
+                },
+                "int": {
+                  "type": "integer",
+                  "title": "My int",
+                  "description": "Enter time."
+                },
+                "bool": {
+                  "type": "boolean",
+                  "title": "My bool",
+                  "description": "Enter time."
+                }
+              }
+            }, data: {
+              "name": "my name",
+              "time": 5.5,
+              "int": 8,
+              "bool": true,
+            });
+          // return ListView.builder(
+          //   padding: const EdgeInsets.only(top: 10),
+          //   itemCount: 20,
+          //   itemBuilder: (context, index) => Container(
+          //     height: 100,
+          //     width: double.infinity,
+          //     constraints: const BoxConstraints(maxWidth: 200),
+          //     margin: const EdgeInsets.only(bottom: 10, right: 10, left: 10),
+          //     decoration: BoxDecoration(
+          //       borderRadius: BorderRadius.circular(20),
+          //       color: Colors.deepOrangeAccent,
+          //       boxShadow: const [BoxShadow()],
+          //     ),
+          //   ),
+          // );
           default:
             return Text('Not implemented yet.');
         }

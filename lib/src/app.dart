@@ -12,7 +12,6 @@ import 'settings/settings_view.dart';
 import 'screens/login_screen.dart';
 import 'package:powerpulse/src/devices/device_view.dart';
 import 'package:powerpulse/src/devices/devices_view.dart';
-import 'package:powerpulse/src/dynamicForm/dynamicForm.dart';
 import 'package:powerpulse/src/dynamicForm/method_app.dart';
 
 import 'globals.dart' as globals;
