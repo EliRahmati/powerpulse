@@ -3,6 +3,7 @@ import 'package:sidebarx/sidebarx.dart';
 import 'package:powerpulse/src/devices/devices_view.dart';
 import 'package:powerpulse/src/settings/settings_view.dart';
 import 'package:powerpulse/src/dynamicForm/dynamicForm.dart';
+import 'package:powerpulse/src/network/websocket.dart';
 
 class MethodApp extends StatelessWidget {
   MethodApp(
@@ -186,12 +187,18 @@ class MethodSidebar extends StatelessWidget {
 }
 
 class _ScreensExample extends StatelessWidget {
-  const _ScreensExample({
+  _ScreensExample({
     Key? key,
     required this.controller,
   }) : super(key: key);
 
   final SidebarXController controller;
+  var sampledata = {
+                  "name": "my name",
+                  "time": 5.5,
+                  "int": 8,
+                  "bool": true,
+                };
 
   @override
   Widget build(BuildContext context) {
@@ -201,37 +208,43 @@ class _ScreensExample extends StatelessWidget {
       builder: (context, child) {
         switch (controller.selectedIndex) {
           case 0:
-            return const DynamicForm(schema: {
-              "title": "Sample Form",
-              "type": "object",
-              "properties": {
-                "name": {
-                  "type": "string",
-                  "title": "My Name",
-                  "description": "Enter your full name."
+            return DynamicForm(
+                schema: const {
+                  "title": "Sample Form",
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "title": "My Name",
+                      "description": "Enter your full name.",
+                      "maxLength": 50
+                    },
+                    "time": {
+                      "type": "number",
+                      "title": "My Time",
+                      "description": "Enter time.",
+                      "minimum": 0,
+                      "maximum": 100,
+                      "unit": "seconds"
+                    },
+                    "int": {
+                      "type": "integer",
+                      "title": "My Int",
+                      "description": "Enter an integer value.",
+                      "minimum": 1,
+                      "maximum": 10
+                    },
+                    "bool": {
+                      "type": "boolean",
+                      "title": "My Bool",
+                      "description": "Toggle the switch."
+                    }
+                  }
                 },
-                "time": {
-                  "type": "number",
-                  "title": "My Time",
-                  "description": "Enter time."
-                },
-                "int": {
-                  "type": "integer",
-                  "title": "My int",
-                  "description": "Enter time."
-                },
-                "bool": {
-                  "type": "boolean",
-                  "title": "My bool",
-                  "description": "Enter time."
-                }
-              }
-            }, data: {
-              "name": "my name",
-              "time": 5.5,
-              "int": 8,
-              "bool": true,
-            });
+                data: sampledata,
+              );
+          case 1:
+            return WebSocketDemo();
           // return ListView.builder(
           //   padding: const EdgeInsets.only(top: 10),
           //   itemCount: 20,

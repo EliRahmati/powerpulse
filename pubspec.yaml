@@ -22,6 +22,8 @@ dependencies:
   network_info_plus: ^6.1.0
   lan_scanner: ^4.0.0
   sidebarx: ^0.17.1
+  web_socket_channel: ^2.3.0
+  msgpack_dart: ^1.0.1
 
 dev_dependencies:
   flutter_test:

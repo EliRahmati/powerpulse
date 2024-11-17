@@ -18,8 +18,8 @@ void main() async {
   await settingsController.loadSettings();
 
   // init NetworkTools and NetworkToolsFlutter
-  final appDocDirectory = await getApplicationDocumentsDirectory();
-  await configureNetworkTools(appDocDirectory.path, enableDebugging: true);
+  // final appDocDirectory = await getApplicationDocumentsDirectory();
+  // await configureNetworkTools(appDocDirectory.path, enableDebugging: true);
   // await configureNetworkToolsFlutter(appDocDirectory.path,
   //     enableDebugging: true);
 

@@ -51,27 +51,35 @@ class _DynamicFormState extends State<DynamicForm> {
         return TextFormField(
           decoration: InputDecoration(labelText: value['title']),
           keyboardType: TextInputType.number,
-          initialValue: widget.data[key].toString(),
+          initialValue: widget.data[key]?.toString(),
           onChanged: (text) => widget.data[key] = int.tryParse(text),
           validator: (text) {
+            final parsed = int.tryParse(text ?? '');
             if (text == null || text.isEmpty) {
-              return 'Please enter your age';
+              return 'Please enter a value';
             }
-            if (int.tryParse(text) == null) {
+            if (parsed == null) {
               return 'Please enter a valid integer';
+            }
+            if (value['minimum'] != null && parsed < value['minimum']) {
+              return 'Value must be at least ${value['minimum']}';
+            }
+            if (value['maximum'] != null && parsed > value['maximum']) {
+              return 'Value must not exceed ${value['maximum']}';
             }
             return null;
           },
         );
       case 'number':
+        final unit = value['unit'] ?? '';
         return NumberField(
-          value: mayValue,
-          title: 'Amount',
-          unit: 'g',
+          value: widget.data[key] ?? value['minimum'] ?? 0.0,
+          title: value['title'] + (unit.isNotEmpty ? ' ($unit)' : ''),
+          unit: unit,
           unitPrefix: unitPrefix,
           onValueChange: (newValue) {
             setState(() {
-              mayValue = newValue;
+              widget.data[key] = newValue;
             });
           },
           onUnitPrefixChange: (newPrefix) {
@@ -79,15 +87,9 @@ class _DynamicFormState extends State<DynamicForm> {
               unitPrefix = newPrefix;
             });
           },
-          min: 0.0,
-          max: 1000.0,
+          min: value['minimum']?.toDouble() ?? 0.0,
+          max: value['maximum']?.toDouble() ?? double.infinity,
         );
-      // return TextFormField(
-      //   decoration: InputDecoration(labelText: value['title']),
-      //   keyboardType: TextInputType.numberWithOptions(decimal: true),
-      //   initialValue: widget.data[key].toString(),
-      //   onChanged: (text) => widget.data[key] = double.tryParse(text),
-      // );
       case 'boolean':
         return Row(
           children: [
@@ -120,7 +122,7 @@ class _DynamicFormState extends State<DynamicForm> {
                 key: _formKey,
                 child: Column(
                   children: [
-                    ...widget.schema!['properties'].entries.map((entry) {
+                    ...widget.schema['properties'].entries.map((entry) {
                       return _buildField(entry.key, entry.value);
                     }).toList(),
                     SizedBox(height: 20),
