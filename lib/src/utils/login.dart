@@ -80,7 +80,7 @@ class _LoginFormState extends State<LoginForm> {
         child: Container(
             width: double.infinity,
             height: double.infinity,
-            constraints: BoxConstraints(maxWidth: 400, maxHeight: 500),
+            constraints: BoxConstraints(maxWidth: 400, maxHeight: 600),
             child: Card(
                 child: Padding(
                     padding: EdgeInsets.all(40),

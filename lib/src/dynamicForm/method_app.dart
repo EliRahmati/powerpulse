@@ -194,11 +194,12 @@ class _ScreensExample extends StatelessWidget {
 
   final SidebarXController controller;
   var sampledata = {
-                  "name": "my name",
-                  "time": 5.5,
-                  "int": 8,
-                  "bool": true,
-                };
+    "name": "my name",
+    "time": 5.5,
+    "time_shown_unitprefix": "m",
+    "int": 8,
+    "bool": true,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -208,58 +209,62 @@ class _ScreensExample extends StatelessWidget {
       builder: (context, child) {
         switch (controller.selectedIndex) {
           case 0:
-            return DynamicForm(
-                schema: const {
-                  "title": "Sample Form",
-                  "type": "object",
-                  "properties": {
-                    "name": {
-                      "type": "string",
-                      "title": "My Name",
-                      "description": "Enter your full name.",
-                      "maxLength": 50
-                    },
-                    "time": {
-                      "type": "number",
-                      "title": "My Time",
-                      "description": "Enter time.",
-                      "minimum": 0,
-                      "maximum": 100,
-                      "unit": "seconds"
-                    },
-                    "int": {
-                      "type": "integer",
-                      "title": "My Int",
-                      "description": "Enter an integer value.",
-                      "minimum": 1,
-                      "maximum": 10
-                    },
-                    "bool": {
-                      "type": "boolean",
-                      "title": "My Bool",
-                      "description": "Toggle the switch."
+            return ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: 600,
+                ),
+                child: DynamicForm(
+                  schema: const {
+                    "title": "Sample Form",
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "title": "My Name",
+                        "description": "Enter your full name.",
+                        "maxLength": 50
+                      },
+                      "time": {
+                        "type": "float",
+                        "title": "My Time",
+                        "description": "Enter time.",
+                        "minimum": 0,
+                        "maximum": 100,
+                        "unit": "s"
+                      },
+                      "int": {
+                        "type": "integer",
+                        "title": "My Int",
+                        "description": "Enter an integer value.",
+                        "minimum": 1,
+                        "maximum": 10
+                      },
+                      "bool": {
+                        "type": "boolean",
+                        "title": "My Bool",
+                        "description": "Toggle the switch."
+                      }
                     }
-                  }
-                },
-                data: sampledata,
-              );
+                  },
+                  data: sampledata,
+                ));
           case 1:
-            return WebSocketDemo();
-          // return ListView.builder(
-          //   padding: const EdgeInsets.only(top: 10),
-          //   itemCount: 20,
-          //   itemBuilder: (context, index) => Container(
-          //     height: 100,
-          //     width: double.infinity,
-          //     constraints: const BoxConstraints(maxWidth: 200),
-          //     margin: const EdgeInsets.only(bottom: 10, right: 10, left: 10),
-          //     decoration: BoxDecoration(
-          //       borderRadius: BorderRadius.circular(20),
-          //       color: Colors.deepOrangeAccent,
-          //       boxShadow: const [BoxShadow()],
-          //     ),
-          //   ),
-          // );
+            // return WebSocketDemo();
+            return ListView.builder(
+              padding: const EdgeInsets.only(top: 10),
+              itemCount: 20,
+              itemBuilder: (context, index) => Container(
+                height: 100,
+                width: double.infinity,
+                constraints: const BoxConstraints(maxWidth: 200),
+                margin: const EdgeInsets.only(bottom: 10, right: 10, left: 10),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  color: Colors.deepOrangeAccent,
+                  boxShadow: const [BoxShadow()],
+                ),
+              ),
+            );
           default:
             return Text('Not implemented yet.');
         }

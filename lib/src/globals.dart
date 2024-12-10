@@ -5,8 +5,6 @@ import 'package:powerpulse/src/models/user.dart';
 String? token;
 User? user;
 const Map<String, double> prefixMultipliers = {
-  'T': 1e12, // tera
-  'G': 1e9, // giga
   'M': 1e6, // mega
   'k': 1e3, // kilo
   '': 1, //

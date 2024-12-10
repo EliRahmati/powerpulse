@@ -131,7 +131,7 @@ class MyApp extends StatelessWidget {
                     //       "description": "Enter your full name."
                     //     },
                     //     "time": {
-                    //       "type": "number",
+                    //       "type": "float",
                     //       "title": "My Time",
                     //       "description": "Enter time."
                     //     },

@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:powerpulse/src/dynamicForm/number_field.dart';
 import 'package:sidebarx/sidebarx.dart';
@@ -29,9 +28,6 @@ class _DynamicFormState extends State<DynamicForm> {
     super.initState();
   }
 
-  double mayValue = 100;
-  String unitPrefix = 'k';
-
   Widget _buildField(String key, dynamic value) {
     switch (value['type']) {
       case 'string':
@@ -48,35 +44,27 @@ class _DynamicFormState extends State<DynamicForm> {
           },
         );
       case 'integer':
-        return TextFormField(
-          decoration: InputDecoration(labelText: value['title']),
-          keyboardType: TextInputType.number,
-          initialValue: widget.data[key]?.toString(),
-          onChanged: (text) => widget.data[key] = int.tryParse(text),
-          validator: (text) {
-            final parsed = int.tryParse(text ?? '');
-            if (text == null || text.isEmpty) {
-              return 'Please enter a value';
-            }
-            if (parsed == null) {
-              return 'Please enter a valid integer';
-            }
-            if (value['minimum'] != null && parsed < value['minimum']) {
-              return 'Value must be at least ${value['minimum']}';
-            }
-            if (value['maximum'] != null && parsed > value['maximum']) {
-              return 'Value must not exceed ${value['maximum']}';
-            }
-            return null;
+        return NumberField(
+          value: widget.data[key],
+          title: value['title'],
+          type: NumberFieldType.integer,
+          onValueChange: (newValue) {
+            setState(() {
+              widget.data[key] = newValue;
+            });
           },
+          min: value['minimum']?.toInt(),
+          max: value['maximum']?.toInt(),
         );
-      case 'number':
+      case 'float':
         final unit = value['unit'] ?? '';
         return NumberField(
-          value: widget.data[key] ?? value['minimum'] ?? 0.0,
-          title: value['title'] + (unit.isNotEmpty ? ' ($unit)' : ''),
+          value: widget.data[key],
+          title: value['title'],
           unit: unit,
-          unitPrefix: unitPrefix,
+          type: NumberFieldType.float,
+          unitPrefix:
+              unit != null ? widget.data['${key}_shown_unitprefix'] : null,
           onValueChange: (newValue) {
             setState(() {
               widget.data[key] = newValue;
@@ -84,11 +72,11 @@ class _DynamicFormState extends State<DynamicForm> {
           },
           onUnitPrefixChange: (newPrefix) {
             setState(() {
-              unitPrefix = newPrefix;
+              widget.data['${key}_shown_unitprefix'] = newPrefix;
             });
           },
-          min: value['minimum']?.toDouble() ?? 0.0,
-          max: value['maximum']?.toDouble() ?? double.infinity,
+          min: value['minimum']?.toDouble(),
+          max: value['maximum']?.toDouble(),
         );
       case 'boolean':
         return Row(
@@ -116,28 +104,28 @@ class _DynamicFormState extends State<DynamicForm> {
     return Scaffold(
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: widget.schema == null
-            ? Center(child: CircularProgressIndicator())
-            : Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    ...widget.schema['properties'].entries.map((entry) {
-                      return _buildField(entry.key, entry.value);
-                    }).toList(),
-                    SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: () {
-                        if (_formKey.currentState!.validate()) {
-                          // Process the data
-                          print(widget.data);
-                        }
-                      },
-                      child: Text('Submit'),
-                    ),
-                  ],
-                ),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              ...widget.schema['properties'].entries.map((entry) {
+                return Padding(
+                    padding: const EdgeInsets.only(bottom: 15),
+                    child: _buildField(entry.key, entry.value));
+              }).toList(),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  if (_formKey.currentState!.validate()) {
+                    // Process the data
+                    print(widget.data);
+                  }
+                },
+                child: const Text('Submit'),
               ),
+            ],
+          ),
+        ),
       ),
     );
   }
