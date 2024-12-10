@@ -92,6 +92,95 @@ class _DynamicFormState extends State<DynamicForm> {
             ),
           ],
         );
+      case 'date':
+        return TextFormField(
+          decoration: InputDecoration(labelText: value['title']),
+          readOnly: true,
+          controller: TextEditingController(
+            text: widget.data[key]?.toString(),
+          ),
+          onTap: () async {
+            final selectedDate = await showDatePicker(
+              context: context,
+              initialDate: DateTime.now(),
+              firstDate: DateTime(1900),
+              lastDate: DateTime(2100),
+            );
+            if (selectedDate != null) {
+              setState(() {
+                widget.data[key] = selectedDate.toIso8601String().split('T')[0];
+              });
+            }
+          },
+        );
+      case 'time':
+        return TextFormField(
+          decoration: InputDecoration(labelText: value['title']),
+          readOnly: true,
+          controller: TextEditingController(
+            text: widget.data[key]?.toString(),
+          ),
+          onTap: () async {
+            final selectedTime = await showTimePicker(
+              context: context,
+              initialTime: TimeOfDay.now(),
+            );
+            if (selectedTime != null) {
+              setState(() {
+                widget.data[key] = selectedTime.format(context);
+              });
+            }
+          },
+        );
+      case 'datetime':
+        return TextFormField(
+          decoration: InputDecoration(labelText: value['title']),
+          readOnly: true,
+          controller: TextEditingController(
+            text: widget.data[key]?.toString(),
+          ),
+          onTap: () async {
+            final selectedDate = await showDatePicker(
+              context: context,
+              initialDate: DateTime.now(),
+              firstDate: DateTime(1900),
+              lastDate: DateTime(2100),
+            );
+            if (selectedDate != null) {
+              final selectedTime = await showTimePicker(
+                context: context,
+                initialTime: TimeOfDay.now(),
+              );
+              if (selectedTime != null) {
+                setState(() {
+                  widget.data[key] = DateTime(
+                    selectedDate.year,
+                    selectedDate.month,
+                    selectedDate.day,
+                    selectedTime.hour,
+                    selectedTime.minute,
+                  ).toIso8601String();
+                });
+              }
+            }
+          },
+        );
+      case 'enum':
+        return DropdownButtonFormField<String>(
+          decoration: InputDecoration(labelText: value['title']),
+          value: widget.data[key],
+          items: (value['enum'] as List<dynamic>)
+              .map((item) => DropdownMenuItem<String>(
+                    value: item as String,
+                    child: Text(item),
+                  ))
+              .toList(),
+          onChanged: (newValue) {
+            setState(() {
+              widget.data[key] = newValue;
+            });
+          },
+        );
       default:
         return SizedBox.shrink();
     }

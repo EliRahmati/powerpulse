@@ -199,6 +199,10 @@ class _ScreensExample extends StatelessWidget {
     "time_shown_unitprefix": "m",
     "int": 8,
     "bool": true,
+    "birthdate": "2000-01-01",
+    "appointment_time": "14:30",
+    "meeting_datetime": "2024-11-17T14:30:00",
+    "gender": "Male",
   };
 
   @override
@@ -243,6 +247,23 @@ class _ScreensExample extends StatelessWidget {
                         "type": "boolean",
                         "title": "My Bool",
                         "description": "Toggle the switch."
+                      },
+                      "birthdate": {
+                        "type": "date",
+                        "title": "Birth Date"
+                      },
+                      "appointment_time": {
+                        "type": "time",
+                        "title": "Appointment Time"
+                      },
+                      "meeting_datetime": {
+                        "type": "datetime",
+                        "title": "Meeting Date & Time"
+                      },
+                      "gender": {
+                        "type": "enum",
+                        "title": "Gender",
+                        "enum": ["Male", "Female", "Other"]
                       }
                     }
                   },
