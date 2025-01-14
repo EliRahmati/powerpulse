@@ -3,7 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:powerpulse/src/globals.dart' as globals;
 import 'dart:async'; // Import for Timer
 
-num convertValue(num value, String prefix) {
+num convertValue(num basevalue, String prefix) {
+  return basevalue / globals.prefixMultipliers[prefix]!;
+}
+
+num baseValue(num value, String prefix) {
   return value * globals.prefixMultipliers[prefix]!;
 }
 
@@ -60,28 +64,36 @@ class _NumberFieldState extends State<NumberField> {
     super.dispose();
   }
 
-  String? _validator(String? value) {
-    num inputValue = 0;
+  String? _textValidator(String? value) {
     if (value == null || value.isEmpty) {
       return 'Invalid number';
     }
     try {
-      inputValue = num.parse(value);
+      num.parse(value);
     } catch (e) {
       return 'Invalid number';
     }
+    return null;
+  }
+
+  String? _numValidator(num value) {
+    var minInUnit = widget.unit != null
+        ? '${convertValue(widget.min!, widget.unitPrefix!)} (${widget.unitPrefix}${widget.unit})'
+        : widget.min;
+    var maxInUnit = widget.unit != null
+        ? '${convertValue(widget.max!, widget.unitPrefix!)} (${widget.unitPrefix}${widget.unit})'
+        : widget.max;
     if (widget.max == null && widget.min != null) {
-      if (inputValue < (widget.min as num)) {
-        return 'Value must be greater than ${widget.min}';
+      if (value < (widget.min as num)) {
+        return 'Value must be greater than $minInUnit';
       }
     } else if (widget.max != null && widget.min == null) {
-      if (inputValue > (widget.max as num)) {
-        return 'Value must be less than ${widget.max}';
+      if (value > (widget.max as num)) {
+        return 'Value must be less than $maxInUnit';
       }
     } else if (widget.min != null && widget.max != null) {
-      if (inputValue < (widget.min as num) ||
-          inputValue > (widget.max as num)) {
-        return 'Value must be between ${widget.min} and ${widget.max}';
+      if (value < (widget.min as num) || value > (widget.max as num)) {
+        return 'Value must be between $minInUnit and $maxInUnit';
       }
     }
     return null;
@@ -96,6 +108,7 @@ class _NumberFieldState extends State<NumberField> {
             : convertValue(widget.value, newPrefix).toString();
         _controller.selection = TextSelection.collapsed(
             offset: _controller.text.length); // To move the cursor to the end
+        _errorMessage = null;
       });
     }
   }
@@ -114,14 +127,25 @@ class _NumberFieldState extends State<NumberField> {
       _debounceTimer?.cancel();
     }
 
-    _debounceTimer = Timer(Duration(milliseconds: 700), () {
-      var error = _validator(value);
-      if (error == null) {
-        widget.onValueChange(num.parse(value));
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      var error = _textValidator(value);
+      if (error != null) {
+        setState(() {
+          _errorMessage = error;
+        });
+      } else {
+        num base = num.parse(value);
+        if (widget.unit != null) {
+          base = baseValue(num.parse(value), widget.unitPrefix!);
+        }
+        var numError = _numValidator(base);
+        if (numError == null) {
+          widget.onValueChange(base);
+        }
+        setState(() {
+          _errorMessage = numError;
+        });
       }
-      setState(() {
-        _errorMessage = error;
-      });
     });
   }
 
@@ -132,7 +156,11 @@ class _NumberFieldState extends State<NumberField> {
       children: [
         Expanded(
           child: TextFormField(
-            controller: _controller,
+            controller: TextEditingController(
+                text: widget.unit == null
+                    ? widget.value.toString()
+                    : convertValue(widget.value, widget.unitPrefix!)
+                        .toString()),
             keyboardType: widget.type == NumberFieldType.integer
                 ? TextInputType.number
                 : const TextInputType.numberWithOptions(decimal: true),
@@ -141,14 +169,16 @@ class _NumberFieldState extends State<NumberField> {
               errorText: _errorMessage,
               suffixIcon: widget.unit != null
                   ? GestureDetector(
-                      onTap: () async {
-                        final RenderBox renderBox =
-                            context.findRenderObject() as RenderBox;
-                        final offset = renderBox.localToGlobal(Offset.zero);
+                      onTapDown: (details) async {
+                        final offset = details.globalPosition;
                         final selectedPrefix = await showMenu<String>(
                           context: context,
                           position: RelativeRect.fromLTRB(
-                              offset.dx, offset.dy, 0.0, 0.0),
+                            offset.dx,
+                            offset.dy - 40,
+                            MediaQuery.of(context).size.width - offset.dx - 40,
+                            MediaQuery.of(context).size.height - offset.dy,
+                          ),
                           items: _unitPrefixes.map((String prefix) {
                             return PopupMenuItem<String>(
                               value: prefix,

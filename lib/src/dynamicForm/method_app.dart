@@ -69,7 +69,7 @@ class MethodApp extends StatelessWidget {
           if (!isSmallScreen) MethodSidebar(controller: _controller),
           Expanded(
             child: Center(
-              child: _ScreensExample(
+              child: _ScreensExampleWidget(
                 controller: _controller,
               ),
             ),
@@ -186,89 +186,187 @@ class MethodSidebar extends StatelessWidget {
   }
 }
 
-class _ScreensExample extends StatelessWidget {
-  _ScreensExample({
-    Key? key,
-    required this.controller,
-  }) : super(key: key);
-
+class _ScreensExampleWidget extends StatefulWidget {
   final SidebarXController controller;
-  var sampledata = {
-    "name": "my name",
-    "time": 5.5,
-    "time_shown_unitprefix": "m",
-    "int": 8,
-    "bool": true,
-    "birthdate": "2000-01-01",
-    "appointment_time": "14:30",
-    "meeting_datetime": "2024-11-17T14:30:00",
-    "gender": "Male",
-  };
+
+  const _ScreensExampleWidget({
+    super.key,
+    required this.controller,
+  });
+
+  @override
+  _ScreensExampleWidgetState createState() => _ScreensExampleWidgetState();
+}
+
+class _ScreensExampleWidgetState extends State<_ScreensExampleWidget> {
+  late Map<String, dynamic> data;
+
+  @override
+  void initState() {
+    super.initState();
+    data = {
+      "name": "my name",
+      "time": 5.5,
+      "time_shown_unitprefix": "m",
+      "int": 8,
+      "bool": true,
+      "birthdate": "2000-01-01",
+      "run_time": 10000,
+      "meeting_datetime": "2024-11-17T14:30:00",
+      "gender": "Male",
+      "description": "",
+      "x": 4,
+      "x_shown_unitprefix": "",
+      "v": 2,
+      "v_shown_unitprefix": "",
+      "t": 2,
+      "t_shown_unitprefix": "",
+      "times": [2.0, 4.0, 5.0],
+      "times_shown_unitprefix": "",
+      "numbers": [2, 6, 9, 0, 8],
+      "xarr": [1.0, 4.0, 12.0],
+      "xarr_shown_unitprefix": "",
+      "varr": [1.0, 2.0, 4.0],
+      "varr_shown_unitprefix": "",
+      "tarr": [1.0, 2.0, 3.0],
+      "tarr_shown_unitprefix": "",
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return AnimatedBuilder(
-      animation: controller,
+      animation: widget.controller,
       builder: (context, child) {
-        switch (controller.selectedIndex) {
+        switch (widget.controller.selectedIndex) {
           case 0:
             return ConstrainedBox(
                 constraints: const BoxConstraints(
                   maxWidth: 600,
                 ),
                 child: DynamicForm(
-                  schema: const {
-                    "title": "Sample Form",
-                    "type": "object",
-                    "properties": {
-                      "name": {
-                        "type": "string",
-                        "title": "My Name",
-                        "description": "Enter your full name.",
-                        "maxLength": 50
-                      },
-                      "time": {
-                        "type": "float",
-                        "title": "My Time",
-                        "description": "Enter time.",
-                        "minimum": 0,
-                        "maximum": 100,
-                        "unit": "s"
-                      },
-                      "int": {
-                        "type": "integer",
-                        "title": "My Int",
-                        "description": "Enter an integer value.",
-                        "minimum": 1,
-                        "maximum": 10
-                      },
-                      "bool": {
-                        "type": "boolean",
-                        "title": "My Bool",
-                        "description": "Toggle the switch."
-                      },
-                      "birthdate": {
-                        "type": "date",
-                        "title": "Birth Date"
-                      },
-                      "appointment_time": {
-                        "type": "time",
-                        "title": "Appointment Time"
-                      },
-                      "meeting_datetime": {
-                        "type": "datetime",
-                        "title": "Meeting Date & Time"
-                      },
-                      "gender": {
-                        "type": "enum",
-                        "title": "Gender",
-                        "enum": ["Male", "Female", "Other"]
+                    schema: const {
+                      "title": "Sample Form",
+                      "properties": {
+                        "description": {
+                          "type": "richtext",
+                          "title": "my description",
+                        },
+                        "name": {
+                          "type": "string",
+                          "title": "My Name",
+                          "description": "Enter your full name.",
+                          "maxLength": 50
+                        },
+                        "time": {
+                          "type": "float",
+                          "title": "My Time",
+                          "description": "Enter time.",
+                          "minimum": 0,
+                          "maximum": 100,
+                          "unit": "s"
+                        },
+                        "x": {
+                          "type": "float",
+                          "title": "x",
+                          "description": "Enter time.",
+                          "minimum": 0,
+                          "maximum": 100,
+                          "unit": "m",
+                          "exp": ["v = x / t"]
+                        },
+                        "v": {
+                          "type": "float",
+                          "title": "v",
+                          "description": "Enter time.",
+                          "minimum": 0,
+                          "maximum": 100,
+                          "unit": "m/s",
+                          "exp": ["x = v * t"]
+                        },
+                        "t": {
+                          "type": "float",
+                          "title": "t",
+                          "description": "Enter time.",
+                          "minimum": 0,
+                          "maximum": 100,
+                          "unit": "s",
+                          "exp": ["x = sqrt(t)"]
+                        },
+                        "int": {
+                          "type": "integer",
+                          "title": "My Int",
+                          "description": "Enter an integer value.",
+                          "minimum": 1,
+                          "maximum": 10
+                        },
+                        "bool": {
+                          "type": "boolean",
+                          "title": "My Bool",
+                          "description": "Toggle the switch."
+                        },
+                        "birthdate": {"type": "date", "title": "Birth Date"},
+                        "run_time": {"type": "duration", "title": "Run Time"},
+                        "meeting_datetime": {
+                          "type": "datetime",
+                          "title": "Meeting Date & Time"
+                        },
+                        "gender": {
+                          "type": "enum",
+                          "title": "Gender",
+                          "enum": ["Male", "Female", "Other"]
+                        },
+                        "times": {
+                          "type": "float[]",
+                          "title": "My Times",
+                          "description": "Enter time.",
+                          "minimum": 0,
+                          "maximum": 100,
+                          "unit": "s"
+                        },
+                        "numbers": {
+                          "type": "integer[]",
+                          "title": "My numbers",
+                          "description": "Enter number.",
+                          "minimum": 0,
+                          "maximum": 100,
+                        },
+                        "xarr": {
+                          "type": "float[]",
+                          "title": "x",
+                          "description": "Enter x array.",
+                          "minimum": 0,
+                          "maximum": 100,
+                          "unit": "m",
+                          "exp": ["x = norm(xarr)"]
+                        },
+                        "varr": {
+                          "type": "float[]",
+                          "title": "v",
+                          "description": "Enter v array.",
+                          "minimum": 0,
+                          "maximum": 100,
+                          "unit": "m/s",
+                          "exp": ["xarr = sqrt(t) * sqrt(varr)"]
+                        },
+                        "tarr": {
+                          "type": "float[]",
+                          "title": "t",
+                          "description": "Enter time array.",
+                          "minimum": 0,
+                          "maximum": 100,
+                          "unit": "s",
+                          "exp": ["xarr = varr + tarr"]
+                        }
                       }
-                    }
-                  },
-                  data: sampledata,
-                ));
+                    },
+                    data: data,
+                    onValueChange: (value) {
+                      setState(() {
+                        data = value;
+                      });
+                    }));
           case 1:
             // return WebSocketDemo();
             return ListView.builder(

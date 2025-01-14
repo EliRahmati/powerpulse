@@ -24,6 +24,10 @@ dependencies:
   sidebarx: ^0.17.1
   web_socket_channel: ^2.3.0
   msgpack_dart: ^1.0.1
+  intl: ^0.19.0
+  flutter_markdown: ^0.7.4+3
+  expressions: ^0.2.5+2
+  ml_linalg: ^13.12.6
 
 dev_dependencies:
   flutter_test:

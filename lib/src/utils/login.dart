@@ -80,7 +80,7 @@ class _LoginFormState extends State<LoginForm> {
         child: Container(
             width: double.infinity,
             height: double.infinity,
-            constraints: BoxConstraints(maxWidth: 400, maxHeight: 600),
+            constraints: BoxConstraints(maxWidth: 400, maxHeight: 500),
             child: Card(
                 child: Padding(
                     padding: EdgeInsets.all(40),
@@ -100,33 +100,53 @@ class _LoginFormState extends State<LoginForm> {
                                   borderSide: BorderSide.none,
                                   borderRadius: BorderRadius.circular(50)),
                             ),
+                            onFieldSubmitted: (String value) {
+                              if (_personFormKey.currentState!.validate()) {
+                                _login();
+                                // Navigator.of(context).pop();
+                                Navigator.restorablePushNamed(
+                                  context,
+                                  '/',
+                                );
+                              }
+                            },
                           ),
                           SizedBox(height: 24.0),
                           TextFormField(
-                            controller: _passController,
-                            validator: _passValidator,
-                            obscureText: _obscured,
-                            decoration: InputDecoration(
-                              labelText: 'Password',
-                              filled: true,
-                              prefixIcon: const Icon(Icons.lock),
-                              suffixIcon: Padding(
-                                padding: const EdgeInsets.fromLTRB(0, 0, 10, 0),
-                                child: GestureDetector(
-                                  onTap: _toggleObscured,
-                                  child: Icon(
-                                    _obscured
-                                        ? Icons.visibility_rounded
-                                        : Icons.visibility_off_rounded,
-                                    size: 24,
+                              controller: _passController,
+                              validator: _passValidator,
+                              obscureText: _obscured,
+                              decoration: InputDecoration(
+                                labelText: 'Password',
+                                filled: true,
+                                prefixIcon: const Icon(Icons.lock),
+                                suffixIcon: Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(0, 0, 10, 0),
+                                  child: GestureDetector(
+                                    onTap: _toggleObscured,
+                                    child: Icon(
+                                      _obscured
+                                          ? Icons.visibility_rounded
+                                          : Icons.visibility_off_rounded,
+                                      size: 24,
+                                    ),
                                   ),
                                 ),
+                                border: OutlineInputBorder(
+                                    borderSide: BorderSide.none,
+                                    borderRadius: BorderRadius.circular(50)),
                               ),
-                              border: OutlineInputBorder(
-                                  borderSide: BorderSide.none,
-                                  borderRadius: BorderRadius.circular(50)),
-                            ),
-                          ),
+                              onFieldSubmitted: (String value) {
+                                if (_personFormKey.currentState!.validate()) {
+                                  _login();
+                                  // Navigator.of(context).pop();
+                                  Navigator.restorablePushNamed(
+                                    context,
+                                    '/',
+                                  );
+                                }
+                              }),
                           Spacer(),
                           Padding(
                             padding:
