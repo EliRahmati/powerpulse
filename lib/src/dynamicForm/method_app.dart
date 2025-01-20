@@ -230,6 +230,9 @@ class _ScreensExampleWidgetState extends State<_ScreensExampleWidget> {
       "varr_shown_unitprefix": "",
       "tarr": [1.0, 2.0, 3.0],
       "tarr_shown_unitprefix": "",
+      "normx": 4,
+      "normx_shown_unitprefix": "",
+      "intxarr": [1, 5],
     };
   }
 
@@ -292,7 +295,7 @@ class _ScreensExampleWidgetState extends State<_ScreensExampleWidget> {
                           "minimum": 0,
                           "maximum": 100,
                           "unit": "s",
-                          "exp": ["x = sqrt(t)"]
+                          "exp": ["x = sqrt(t)", "int = t"]
                         },
                         "int": {
                           "type": "integer",
@@ -339,7 +342,15 @@ class _ScreensExampleWidgetState extends State<_ScreensExampleWidget> {
                           "minimum": 0,
                           "maximum": 100,
                           "unit": "m",
-                          "exp": ["x = norm(xarr)"]
+                          "exp": ["normx = norm(xarr)"]
+                        },
+                        "normx": {
+                          "type": "float",
+                          "title": "normx",
+                          "description": "Enter time.",
+                          "minimum": 0,
+                          "maximum": 20,
+                          "unit": "m"
                         },
                         "varr": {
                           "type": "float[]",
@@ -348,7 +359,7 @@ class _ScreensExampleWidgetState extends State<_ScreensExampleWidget> {
                           "minimum": 0,
                           "maximum": 100,
                           "unit": "m/s",
-                          "exp": ["xarr = sqrt(t) * sqrt(varr)"]
+                          "exp": ["xarr = sqrt(varr) * 4"]
                         },
                         "tarr": {
                           "type": "float[]",
@@ -357,7 +368,14 @@ class _ScreensExampleWidgetState extends State<_ScreensExampleWidget> {
                           "minimum": 0,
                           "maximum": 100,
                           "unit": "s",
-                          "exp": ["xarr = varr + tarr"]
+                          "exp": ["xarr = floor(tarr)", "intxarr = floor(tarr)"]
+                        },
+                        "intxarr": {
+                          "type": "integer[]",
+                          "title": "t",
+                          "description": "Enter time array.",
+                          "minimum": 0,
+                          "maximum": 50
                         }
                       }
                     },

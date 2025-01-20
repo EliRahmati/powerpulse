@@ -23,6 +23,26 @@ num norm(val) {
   }
 }
 
+num floor(num val) {
+  return val.floor();
+}
+
+num ceil(num val) {
+  return val.ceil();
+}
+
+num round(num val) {
+  return val.round();
+}
+
+num toInt(num val) {
+  return val.toInt();
+}
+
+num toDouble(num val) {
+  return val.toDouble();
+}
+
 dynamic withList(func) {
   return (val) {
     if (val is List) {
@@ -57,6 +77,11 @@ var functions = {
   "sqrt2": withList(sqrt2), // Square root of 2
   "abs": norm, // abs
   "norm": norm, // abs
+  "floor": withList(floor),
+  "ceil": withList(ceil),
+  "round": withList(round),
+  "int": withList(toInt),
+  "double": withList(toDouble),
 };
 
 class ArrayShape {
@@ -150,14 +175,29 @@ class CustomExpressionEvaluator extends ExpressionEvaluator {
     var fulContext = {...context, ...functions};
     // Modify the eval method to support list element-wise multiplication
 
-    // Handle list operations manually after eval
-    if (expression.toString().contains('*')) {
-      var operator = expression.toString().split('*')[1].trim();
+    if (expression.runtimeType == BinaryExpression) {
+      var operator = (expression as BinaryExpression).operator;
+      dynamic leftExpression = expression.left.toString();
+      dynamic rightExpression = expression.right.toString();
+      dynamic left;
+      if (expression.left is Variable) {
+        left = fulContext[leftExpression];
+      } else {
+        Expression ex = Expression.parse(expression.left.toString());
+        var evaluator = CustomExpressionEvaluator();
+        left = evaluator.eval(ex, fulContext);
+      }
 
-      if (fulContext.containsKey(operator)) {
-        var left = fulContext[expression.toString().split('*')[0].trim()];
-        var right = fulContext[operator];
+      dynamic right;
+      if (expression.right is Variable) {
+        right = fulContext[rightExpression];
+      } else {
+        Expression ex = Expression.parse(expression.right.toString());
+        var evaluator = CustomExpressionEvaluator();
+        right = evaluator.eval(ex, fulContext);
+      }
 
+      if (operator == '*') {
         if (left is num && right is num) {
           return left * right;
         } else if (left is num && right is List) {
@@ -170,16 +210,7 @@ class CustomExpressionEvaluator extends ExpressionEvaluator {
           return List.generate(
               left.length, (index) => left[index] * right[index] as num);
         }
-      }
-    }
-
-    if (expression.toString().contains('/')) {
-      var operator = expression.toString().split('/')[1].trim();
-
-      if (fulContext.containsKey(operator)) {
-        var left = fulContext[expression.toString().split('/')[0].trim()];
-        var right = fulContext[operator];
-
+      } else if (operator == '/') {
         if (left is num && right is num) {
           return left / right as num;
         } else if (left is num && right is List) {
@@ -192,16 +223,7 @@ class CustomExpressionEvaluator extends ExpressionEvaluator {
           return List.generate(
               left.length, (index) => left[index] / right[index] as num);
         }
-      }
-    }
-
-    if (expression.toString().contains('+')) {
-      var operator = expression.toString().split('+')[1].trim();
-
-      if (fulContext.containsKey(operator)) {
-        var left = fulContext[expression.toString().split('+')[0].trim()];
-        var right = fulContext[operator];
-
+      } else if (operator == '+') {
         if (left is num && right is num) {
           return left + right;
         } else if (left is num && right is List) {
@@ -214,16 +236,7 @@ class CustomExpressionEvaluator extends ExpressionEvaluator {
           return List.generate(
               left.length, (index) => left[index] + right[index] as num);
         }
-      }
-    }
-
-    if (expression.toString().contains('-')) {
-      var operator = expression.toString().split('-')[1].trim();
-
-      if (fulContext.containsKey(operator)) {
-        var left = fulContext[expression.toString().split('-')[0].trim()];
-        var right = fulContext[operator];
-
+      } else if (operator == '-') {
         if (left is num && right is num) {
           return left - right;
         } else if (left is num && right is List) {
@@ -236,16 +249,7 @@ class CustomExpressionEvaluator extends ExpressionEvaluator {
           return List.generate(
               left.length, (index) => left[index] - right[index] as num);
         }
-      }
-    }
-
-    if (expression.toString().contains('^')) {
-      var operator = expression.toString().split('^')[1].trim();
-
-      if (fulContext.containsKey(operator)) {
-        var left = fulContext[expression.toString().split('^')[0].trim()];
-        var right = fulContext[operator];
-
+      } else if (operator == '^') {
         if (left is num && right is num) {
           return pow(left, right);
         } else if (left is num && right is List) {
@@ -258,25 +262,21 @@ class CustomExpressionEvaluator extends ExpressionEvaluator {
           return List.generate(
               left.length, (index) => pow(left[index], right[index]));
         }
-      }
-    }
+      } else if (operator == '.') {
+        if (fulContext.containsKey(operator)) {
+          var left = fulContext[expression.toString().split('.')[0].trim()];
+          var right = fulContext[operator];
 
-    if (expression.toString().contains('.')) {
-      var operator = expression.toString().split('.')[1].trim();
-
-      if (fulContext.containsKey(operator)) {
-        var left = fulContext[expression.toString().split('.')[0].trim()];
-        var right = fulContext[operator];
-
-        if (left is num && right is num) {
-          return left * right;
-        } else if (left is List &&
-            right is List &&
-            left.length == right.length) {
-          final vector1 = Vector.fromList(left as List<num>);
-          final vector2 = Vector.fromList(right as List<num>);
-          final result = vector1.dot(vector2);
-          return result as num;
+          if (left is num && right is num) {
+            return left * right;
+          } else if (left is List &&
+              right is List &&
+              left.length == right.length) {
+            final vector1 = Vector.fromList(left as List<num>);
+            final vector2 = Vector.fromList(right as List<num>);
+            final result = vector1.dot(vector2);
+            return result as num;
+          }
         }
       }
     }
@@ -295,8 +295,7 @@ class _DynamicFormState extends State<DynamicForm> {
     super.initState();
   }
 
-  void evaluateAndUpdate(List<dynamic> expressions, List<String>? done) {
-    done ??= [];
+  void evaluateAndUpdate(List<dynamic> expressions, List<String> done) {
     // Loop through the list of expressions
     for (var expression in expressions) {
       // Separate the left-hand side and right-hand side
@@ -310,7 +309,15 @@ class _DynamicFormState extends State<DynamicForm> {
         // Parse the right-hand side expression
         Expression rhsExpression = Expression.parse(rhs);
         var evaluator = CustomExpressionEvaluator();
-        final result = evaluator.eval(rhsExpression, widget.data);
+        var result = evaluator.eval(rhsExpression, widget.data);
+
+        ArrayShape arrayShape =
+            getShape(widget.schema['properties'][lhs]['type']);
+        if (arrayShape.baseType == 'integer') {
+          result = withList(toInt)(result);
+        } else {
+          result = withList(toDouble)(result);
+        }
 
         // Use the ExpressionEvaluator to evaluate the right-hand side with the object context
         // Update the object with the result (set the variable value)
@@ -389,7 +396,7 @@ class _DynamicFormState extends State<DynamicForm> {
               setState(() {
                 widget.data[key] = newValue;
                 if (exp != null && exp is List && exp.isNotEmpty) {
-                  evaluateAndUpdate(exp, null);
+                  evaluateAndUpdate(exp, [key]);
                 }
                 widget.onValueChange(widget.data);
               });
@@ -406,7 +413,7 @@ class _DynamicFormState extends State<DynamicForm> {
               setState(() {
                 widget.data[key] = newValue;
                 if (exp != null && exp is List && exp.isNotEmpty) {
-                  evaluateAndUpdate(exp, null);
+                  evaluateAndUpdate(exp, [key]);
                 }
                 widget.onValueChange(widget.data);
               });
@@ -432,7 +439,7 @@ class _DynamicFormState extends State<DynamicForm> {
               setState(() {
                 widget.data[key] = newValue;
                 if (exp != null && exp is List && exp.isNotEmpty) {
-                  evaluateAndUpdate(exp, null);
+                  evaluateAndUpdate(exp, [key]);
                 }
                 widget.onValueChange(widget.data);
               });
@@ -457,7 +464,7 @@ class _DynamicFormState extends State<DynamicForm> {
               setState(() {
                 widget.data[key] = newValue;
                 if (exp != null && exp is List && exp.isNotEmpty) {
-                  evaluateAndUpdate(exp, null);
+                  evaluateAndUpdate(exp, [key]);
                 }
                 widget.onValueChange(widget.data);
               });

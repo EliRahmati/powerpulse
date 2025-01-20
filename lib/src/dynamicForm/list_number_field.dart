@@ -34,7 +34,7 @@ class ListNumbers extends StatefulWidget {
 
 class _ListNumbersState extends State<ListNumbers> {
   late List<TextEditingController> _controllers;
-  late List<String?> _errorMessage;
+  late Map<int, String?> _errorMessage;
   final List<String> _unitPrefixes = globals.prefixMultipliers.keys.toList();
   Timer? _debounceTimer;
 
@@ -47,8 +47,11 @@ class _ListNumbersState extends State<ListNumbers> {
                 ? value.toString()
                 : convertValue(value, widget.unitPrefix!).toString()))
         .toList();
-    _errorMessage =
-        List<String?>.generate(widget.values.length, (index) => null);
+    _errorMessage = {};
+    widget.values.asMap().forEach((index, value) {
+      var numError = _numValidator(value);
+      _errorMessage[index] = numError;
+    });
   }
 
   @override
@@ -57,6 +60,8 @@ class _ListNumbersState extends State<ListNumbers> {
     _debounceTimer?.cancel();
     super.dispose();
   }
+
+  void setController() {}
 
   String? _textValidator(String? value) {
     if (value == null || value.isEmpty) {
@@ -103,8 +108,7 @@ class _ListNumbersState extends State<ListNumbers> {
                     ? value.toString()
                     : convertValue(value, newPrefix).toString()))
             .toList();
-        _errorMessage =
-            List<String?>.generate(widget.values.length, (index) => null);
+        _errorMessage = {};
       });
     }
   }
@@ -123,7 +127,7 @@ class _ListNumbersState extends State<ListNumbers> {
       _debounceTimer?.cancel();
     }
 
-    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+    _debounceTimer = Timer(const Duration(milliseconds: 1000), () {
       var error = _textValidator(value);
       if (error != null) {
         setState(() {
@@ -135,10 +139,8 @@ class _ListNumbersState extends State<ListNumbers> {
           base = baseValue(num.parse(value), widget.unitPrefix!);
         }
         var numError = _numValidator(base);
-        if (numError == null) {
-          widget.values[index] = base;
-          widget.onValueChange(widget.values);
-        }
+        widget.values[index] = base;
+        widget.onValueChange(widget.values);
         setState(() {
           _errorMessage[index] = numError;
         });
@@ -148,6 +150,11 @@ class _ListNumbersState extends State<ListNumbers> {
 
   @override
   Widget build(BuildContext context) {
+    _errorMessage = {};
+    widget.values.asMap().forEach((index, value) {
+      var numError = _numValidator(value);
+      _errorMessage[index] = numError;
+    });
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -196,38 +203,40 @@ class _ListNumbersState extends State<ListNumbers> {
                 ],
               )
             : Text(widget.title),
-        ListView.builder(
+        Padding(
           padding: const EdgeInsets.fromLTRB(25, 0, 25, 0),
-          shrinkWrap: true,
-          itemCount: widget.values.length,
-          itemBuilder: (context, index) {
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: (widget.values
-                        .map((value) => TextEditingController(
-                            text: widget.unit == null
-                                ? value.toString()
-                                : convertValue(value, widget.unitPrefix!)
-                                    .toString()))
-                        .toList())[index],
-                    keyboardType: widget.type == NumberFieldType.integer
-                        ? TextInputType.number
-                        : const TextInputType.numberWithOptions(decimal: true),
-                    decoration: InputDecoration(
-                      errorText: _errorMessage[index],
+          child: Column(
+            children: List.generate(
+              widget.values.length,
+              (index) => Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: (widget.values
+                          .map((value) => TextEditingController(
+                              text: widget.unit == null
+                                  ? value.toString()
+                                  : convertValue(value, widget.unitPrefix!)
+                                      .toString()))
+                          .toList())[index],
+                      keyboardType: widget.type == NumberFieldType.integer
+                          ? TextInputType.number
+                          : const TextInputType.numberWithOptions(
+                              decimal: true),
+                      decoration: InputDecoration(
+                        errorText: _errorMessage[index],
+                      ),
+                      inputFormatters: [_inputFormatter()],
+                      onChanged: (value) {
+                        _debouncedOnChanged(value, index);
+                      },
                     ),
-                    inputFormatters: [_inputFormatter()],
-                    onChanged: (value) {
-                      _debouncedOnChanged(value, index);
-                    },
                   ),
-                ),
-              ],
-            );
-          },
+                ],
+              ),
+            ),
+          ),
         ),
       ],
     );

@@ -46,7 +46,6 @@ class _NumberFieldState extends State<NumberField> {
   String? _errorMessage;
   final List<String> _unitPrefixes = globals.prefixMultipliers.keys.toList();
   Timer? _debounceTimer;
-  bool _isDropdownOpen = false; // To track dropdown visibility
 
   @override
   void initState() {
@@ -127,7 +126,7 @@ class _NumberFieldState extends State<NumberField> {
       _debounceTimer?.cancel();
     }
 
-    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+    _debounceTimer = Timer(const Duration(milliseconds: 1000), () {
       var error = _textValidator(value);
       if (error != null) {
         setState(() {
@@ -139,9 +138,7 @@ class _NumberFieldState extends State<NumberField> {
           base = baseValue(num.parse(value), widget.unitPrefix!);
         }
         var numError = _numValidator(base);
-        if (numError == null) {
-          widget.onValueChange(base);
-        }
+        widget.onValueChange(base);
         setState(() {
           _errorMessage = numError;
         });
@@ -151,6 +148,8 @@ class _NumberFieldState extends State<NumberField> {
 
   @override
   Widget build(BuildContext context) {
+    var numError = _numValidator(widget.value);
+    _errorMessage = numError;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
