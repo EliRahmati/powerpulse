@@ -1,6 +1,30 @@
 # powerpulse
 
-A new Flutter project.
+PowerPulse is a versatile software platform designed to control advanced electrochemical instrumentation. It supports a wide range of operation modes including:
+
+- Potentiostat
+- Galvanostat
+- Electrochemical Impedance Spectroscopy (EIS)
+- Battery Testing
+- Pulse Techniques
+
+PowerPulse enables precise and flexible control over experimental parameters, making it ideal for researchers, engineers, and developers working in electrochemistry, energy storage, and materials science.
+
+### Features
+
+- Intuitive interface for configuring and running experiments  
+- Real-time data acquisition and visualization  
+- Support for custom pulse sequences and test protocols  
+- Exportable data formats for post-processing and analysis  
+- Modular and extensible codebase  
+
+### Use Cases
+
+- Battery cycling and characterization  
+- Electroplating and corrosion studies  
+- Sensor development  
+- Fundamental electrochemical research
+
 
 ## Getting Started
 
