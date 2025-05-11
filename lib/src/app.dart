@@ -13,6 +13,7 @@ import 'screens/login_screen.dart';
 import 'package:powerpulse/src/devices/device_view.dart';
 import 'package:powerpulse/src/devices/devices_view.dart';
 import 'package:powerpulse/src/dynamicForm/method_app.dart';
+import 'package:powerpulse/src/network/websocket.dart';
 
 import 'globals.dart' as globals;
 
@@ -155,6 +156,7 @@ class MyApp extends StatelessWidget {
                     if (globals.user != null) {
                       return Methods();
                     } else {
+                      // return WebSocketScreen();
                       return LoginScreen();
                     }
                 }

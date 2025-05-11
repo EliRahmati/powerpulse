@@ -28,6 +28,7 @@ dependencies:
   flutter_markdown: ^0.7.4+3
   expressions: ^0.2.5+2
   ml_linalg: ^13.12.6
+  crypto: ^3.0.6
 
 dev_dependencies:
   flutter_test:

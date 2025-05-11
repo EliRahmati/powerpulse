@@ -9,11 +9,12 @@ class ListNumbers extends StatefulWidget {
   final String title;
   final String? unit;
   final String? unitPrefix;
-  final Function(List<num>) onValueChange; // Callback now accepts a list
+  final Function(List<num>) onValueChange;
   final Function(String)? onUnitPrefixChange;
   final num? min;
   final num? max;
   final NumberFieldType type;
+  final bool? withDeleteAction;
 
   const ListNumbers({
     super.key,
@@ -26,6 +27,7 @@ class ListNumbers extends StatefulWidget {
     required this.min,
     required this.max,
     required this.type,
+    this.withDeleteAction,
   });
 
   @override
@@ -226,6 +228,15 @@ class _ListNumbersState extends State<ListNumbers> {
                               decimal: true),
                       decoration: InputDecoration(
                         errorText: _errorMessage[index],
+                        suffixIcon: widget.withDeleteAction == true
+                            ? IconButton(
+                                icon: const Icon(Icons.delete),
+                                onPressed: () {
+                                  widget.values.removeAt(index);
+                                  widget.onValueChange(widget.values);
+                                },
+                              )
+                            : null,
                       ),
                       inputFormatters: [_inputFormatter()],
                       onChanged: (value) {

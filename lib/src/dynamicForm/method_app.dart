@@ -215,8 +215,6 @@ class _ScreensExampleWidgetState extends State<_ScreensExampleWidget> {
       "meeting_datetime": "2024-11-17T14:30:00",
       "gender": "Male",
       "description": "",
-      "x": 4,
-      "x_shown_unitprefix": "",
       "v": 2,
       "v_shown_unitprefix": "",
       "t": 2,
@@ -233,6 +231,28 @@ class _ScreensExampleWidgetState extends State<_ScreensExampleWidget> {
       "normx": 4,
       "normx_shown_unitprefix": "",
       "intxarr": [1, 5],
+      "myobject0": {
+        "t": 1.0,
+        "t_shown_unitprefix": "",
+        "v": 2.0,
+        "v_shown_unitprefix": "",
+        "int": 3.0,
+      },
+      "myobjectlist": [
+        {
+          "t": 1.0,
+          "t_shown_unitprefix": "",
+          "v": 2.0,
+          "v_shown_unitprefix": "",
+          "int": 3.0,
+        },
+        {
+          "t": 4.0,
+          "t_shown_unitprefix": "",
+          "v": 5.0,
+        },
+        null
+      ]
     };
   }
 
@@ -246,7 +266,7 @@ class _ScreensExampleWidgetState extends State<_ScreensExampleWidget> {
           case 0:
             return ConstrainedBox(
                 constraints: const BoxConstraints(
-                  maxWidth: 600,
+                  maxWidth: 800,
                 ),
                 child: DynamicForm(
                     schema: const {
@@ -255,12 +275,14 @@ class _ScreensExampleWidgetState extends State<_ScreensExampleWidget> {
                         "description": {
                           "type": "richtext",
                           "title": "my description",
+                          "default": "",
                         },
                         "name": {
                           "type": "string",
                           "title": "My Name",
                           "description": "Enter your full name.",
-                          "maxLength": 50
+                          "maxLength": 50,
+                          "default": "",
                         },
                         "time": {
                           "type": "float",
@@ -268,7 +290,8 @@ class _ScreensExampleWidgetState extends State<_ScreensExampleWidget> {
                           "description": "Enter time.",
                           "minimum": 0,
                           "maximum": 100,
-                          "unit": "s"
+                          "unit": "s",
+                          "default": 0,
                         },
                         "x": {
                           "type": "float",
@@ -277,6 +300,7 @@ class _ScreensExampleWidgetState extends State<_ScreensExampleWidget> {
                           "minimum": 0,
                           "maximum": 100,
                           "unit": "m",
+                          "default": 0,
                           "exp": ["v = x / t"]
                         },
                         "v": {
@@ -286,6 +310,7 @@ class _ScreensExampleWidgetState extends State<_ScreensExampleWidget> {
                           "minimum": 0,
                           "maximum": 100,
                           "unit": "m/s",
+                          "default": 0,
                           "exp": ["x = v * t"]
                         },
                         "t": {
@@ -295,6 +320,7 @@ class _ScreensExampleWidgetState extends State<_ScreensExampleWidget> {
                           "minimum": 0,
                           "maximum": 100,
                           "unit": "s",
+                          "default": 0,
                           "exp": ["x = sqrt(t)", "int = t"]
                         },
                         "int": {
@@ -302,31 +328,44 @@ class _ScreensExampleWidgetState extends State<_ScreensExampleWidget> {
                           "title": "My Int",
                           "description": "Enter an integer value.",
                           "minimum": 1,
-                          "maximum": 10
+                          "maximum": 10,
+                          "default": 1,
                         },
                         "bool": {
                           "type": "boolean",
                           "title": "My Bool",
-                          "description": "Toggle the switch."
+                          "description": "Toggle the switch.",
+                          "default": false,
                         },
-                        "birthdate": {"type": "date", "title": "Birth Date"},
-                        "run_time": {"type": "duration", "title": "Run Time"},
+                        "birthdate": {
+                          "type": "date",
+                          "title": "Birth Date",
+                          "default": "2000-01-01",
+                        },
+                        "run_time": {
+                          "type": "duration",
+                          "title": "Run Time",
+                          "default": 0,
+                        },
                         "meeting_datetime": {
                           "type": "datetime",
-                          "title": "Meeting Date & Time"
+                          "title": "Meeting Date & Time",
+                          "default": "2000-01-01",
                         },
                         "gender": {
                           "type": "enum",
                           "title": "Gender",
-                          "enum": ["Male", "Female", "Other"]
+                          "enum": ["Male", "Female", "Other"],
+                          "default": "Male",
                         },
                         "times": {
-                          "type": "float[]",
+                          "type": "float[10]",
                           "title": "My Times",
                           "description": "Enter time.",
                           "minimum": 0,
                           "maximum": 100,
-                          "unit": "s"
+                          "unit": "s",
+                          "default": 0.0,
                         },
                         "numbers": {
                           "type": "integer[]",
@@ -334,6 +373,7 @@ class _ScreensExampleWidgetState extends State<_ScreensExampleWidget> {
                           "description": "Enter number.",
                           "minimum": 0,
                           "maximum": 100,
+                          "default": 0,
                         },
                         "xarr": {
                           "type": "float[]",
@@ -342,7 +382,8 @@ class _ScreensExampleWidgetState extends State<_ScreensExampleWidget> {
                           "minimum": 0,
                           "maximum": 100,
                           "unit": "m",
-                          "exp": ["normx = norm(xarr)"]
+                          "exp": ["normx = norm(xarr)"],
+                          "default": 0.0,
                         },
                         "normx": {
                           "type": "float",
@@ -350,7 +391,8 @@ class _ScreensExampleWidgetState extends State<_ScreensExampleWidget> {
                           "description": "Enter time.",
                           "minimum": 0,
                           "maximum": 20,
-                          "unit": "m"
+                          "unit": "m",
+                          "default": 0.0,
                         },
                         "varr": {
                           "type": "float[]",
@@ -359,6 +401,7 @@ class _ScreensExampleWidgetState extends State<_ScreensExampleWidget> {
                           "minimum": 0,
                           "maximum": 100,
                           "unit": "m/s",
+                          "default": 0.0,
                           "exp": ["xarr = sqrt(varr) * 4"]
                         },
                         "tarr": {
@@ -368,6 +411,7 @@ class _ScreensExampleWidgetState extends State<_ScreensExampleWidget> {
                           "minimum": 0,
                           "maximum": 100,
                           "unit": "s",
+                          "default": 0.0,
                           "exp": ["xarr = floor(tarr)", "intxarr = floor(tarr)"]
                         },
                         "intxarr": {
@@ -375,12 +419,80 @@ class _ScreensExampleWidgetState extends State<_ScreensExampleWidget> {
                           "title": "t",
                           "description": "Enter time array.",
                           "minimum": 0,
-                          "maximum": 50
+                          "maximum": 50,
+                          "default": 0,
+                        },
+                        "myobject": {
+                          "type": 'object',
+                          "title": "my object",
+                          "description": "Enter object.",
+                          "properties": {
+                            "t": {
+                              "type": "float",
+                              "title": "v",
+                              "description": "Enter time.",
+                              "minimum": 0,
+                              "maximum": 100,
+                              "unit": "s",
+                              "default": 0,
+                            },
+                            "v": {
+                              "type": "float",
+                              "title": "v",
+                              "description": "Enter voltage.",
+                              "minimum": 0,
+                              "maximum": 100,
+                              "unit": "Volt",
+                              "default": 0,
+                            },
+                            "int": {
+                              "type": "integer",
+                              "title": "My Int",
+                              "description": "Enter an integer value.",
+                              "minimum": 1,
+                              "maximum": 10,
+                              "default": 1,
+                            },
+                          }
+                        },
+                        "myobjectlist": {
+                          "type": 'object[]',
+                          "title": "my object list",
+                          "description": "Enter object.",
+                          "properties": {
+                            "t": {
+                              "type": "float",
+                              "title": "v",
+                              "description": "Enter time.",
+                              "minimum": 0,
+                              "maximum": 100,
+                              "unit": "s",
+                              "default": 0,
+                            },
+                            "v": {
+                              "type": "float",
+                              "title": "v",
+                              "description": "Enter voltage.",
+                              "minimum": 0,
+                              "maximum": 100,
+                              "unit": "Volt",
+                              "default": 0,
+                            },
+                            "int": {
+                              "type": "integer",
+                              "title": "My Int",
+                              "description": "Enter an integer value.",
+                              "minimum": 1,
+                              "maximum": 10,
+                              "default": 1,
+                            },
+                          }
                         }
                       }
                     },
                     data: data,
                     onValueChange: (value) {
+                      print(value);
                       setState(() {
                         data = value;
                       });

@@ -123,18 +123,14 @@ ArrayShape getShape(String type) {
 
   // The second part will represent the array brackets and we count them
   String arrayPart = match.group(2) ?? "";
-
-  // Split the array part based on "[]" and check the lengths at each depth
-  List<int> arrayDepths = [];
   int depth = 0;
-  while (arrayPart.contains('[]')) {
-    depth++;
-    int startIndex = arrayPart.indexOf('[]');
-    arrayPart = arrayPart.substring(startIndex + 2); // Move to the next part
-    arrayDepths.add(arrayPart.isEmpty
-        ? -1
-        : int.tryParse(arrayPart) ?? -1); // If empty, use -1
+  if (arrayPart != "") {
+    depth = 1;
   }
+
+  String arrayLength = match.group(3) ?? "";
+  List<int> arrayDepths = [];
+  arrayDepths.add(arrayLength.isEmpty ? -1 : int.tryParse(arrayLength) ?? -1);
 
   if (arrayDepths.isEmpty) {
     return ArrayShape(baseType: baseType, depth: 0, arrayDepths: []);
@@ -293,6 +289,222 @@ class _DynamicFormState extends State<DynamicForm> {
   @override
   void initState() {
     super.initState();
+    if (checkData()) {
+      Future.delayed(Duration.zero, () async {
+        initData();
+      });
+    }
+  }
+
+  bool checkData() {
+    for (var entry in widget.schema['properties'].entries) {
+      ArrayShape arrayShape = getShape(entry.value['type']);
+      if (arrayShape.baseType == 'object') {
+        if (arrayShape.depth == 0) {
+          if (widget.data[entry.key] == null) {
+            return true;
+          }
+          for (var objectEntry in entry.value['properties'].entries) {
+            var schema = objectEntry.value;
+            var key = objectEntry.key;
+            ArrayShape arrayShape = getShape(schema['type']);
+            if (widget.data[entry.key][key] == null) {
+              return true;
+            }
+            if (arrayShape.baseType == 'float') {
+              final unit = schema['unit'];
+              if (unit != null &&
+                  widget.data[entry.key]['${key}_shown_unitprefix'] == null) {
+                return true;
+              }
+            }
+          }
+        } else if (arrayShape.depth == 1) {
+          if (widget.data[entry.key] == null) {
+            return true;
+          }
+          if (arrayShape.arrayDepths[0] > 0) {
+            if (widget.data[entry.key].length != arrayShape.arrayDepths[0]) {
+              return true;
+            }
+          }
+          int n = arrayShape.arrayDepths[0] > 0
+              ? arrayShape.arrayDepths[0]
+              : widget.data[entry.key].length;
+          for (int i = 0; i < n; i++) {
+            if (get(widget.data[entry.key], i) == null) {
+              return true;
+            }
+            for (var objectEntry in entry.value['properties'].entries) {
+              var schema = objectEntry.value;
+              var key = objectEntry.key;
+              ArrayShape arrayShape = getShape(schema['type']);
+              if (widget.data[entry.key][i][key] == null) {
+                return true;
+              }
+              if (arrayShape.baseType == 'float') {
+                final unit = schema['unit'];
+                if (unit != null &&
+                    widget.data[entry.key][i]['${key}_shown_unitprefix'] ==
+                        null) {
+                  return true;
+                }
+              }
+            }
+          }
+        }
+      } else {
+        var schema = entry.value;
+        var key = entry.key;
+        if (widget.data[key] == null) {
+          return true;
+        }
+        if (arrayShape.baseType == 'float') {
+          final unit = schema['unit'];
+          if (unit != null && widget.data['${key}_shown_unitprefix'] == null) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  void setInitData(
+      Map<String, dynamic> schema, Map<String, dynamic> data, String key) {
+    ArrayShape arrayShape = getShape(schema['type']);
+    if (data[key] == null) {
+      data[key] = schema['default'];
+    }
+    if (arrayShape.baseType == 'float') {
+      final unit = schema['unit'];
+      if (unit != null && data['${key}_shown_unitprefix'] == null) {
+        data['${key}_shown_unitprefix'] = "";
+      }
+    }
+  }
+
+  T? get<T>(List<T>? list, int index) {
+    if (list != null && index >= 0 && index < list.length) {
+      return list[index];
+    }
+    return null;
+  }
+
+  void initData() {
+    widget.schema['properties'].entries.forEach((entry) {
+      ArrayShape arrayShape = getShape(entry.value['type']);
+      if (arrayShape.baseType == 'object') {
+        if (arrayShape.depth == 0) {
+          Map<String, dynamic> x = {};
+          widget.data[entry.key] ??= x;
+          entry.value['properties'].entries.forEach((objectEntry) {
+            var schema = objectEntry.value;
+            var key = objectEntry.key;
+            ArrayShape arrayShape = getShape(schema['type']);
+            if (widget.data[entry.key][key] == null) {
+              widget.data[entry.key][key] = schema['default'];
+            }
+            if (arrayShape.baseType == 'float') {
+              final unit = schema['unit'];
+              if (unit != null &&
+                  widget.data[entry.key]['${key}_shown_unitprefix'] == null) {
+                widget.data[entry.key]['${key}_shown_unitprefix'] = "";
+              }
+            }
+          });
+        } else if (arrayShape.depth == 1) {
+          int n = arrayShape.arrayDepths[0] > 0
+              ? arrayShape.arrayDepths[0]
+              : widget.data[entry.key].length;
+          List<Map<String, dynamic>> emptyArray = [];
+          for (int i = 0; i < arrayShape.arrayDepths[0]; i++) {
+            Map<String, dynamic> x = {};
+            emptyArray.add(x);
+          }
+          widget.data[entry.key] ??= emptyArray;
+
+          List<Map<String, dynamic>> xArray = [];
+          for (int i = 0; i < n; i++) {
+            Map<String, dynamic> x = {};
+            if (get(widget.data[entry.key], i) != null) {
+              xArray.add(get(widget.data[entry.key], i));
+            } else {
+              xArray.add(x);
+            }
+          }
+          widget.data[entry.key] = xArray;
+
+          for (int i = 0; i < n; i++) {
+            Map<String, dynamic> x = {};
+            if (arrayShape.arrayDepths[0] < 0) {
+              if (get(widget.data[entry.key], i) == null) {
+                widget.data[entry.key].add(x);
+              }
+            }
+            entry.value['properties'].entries.forEach((objectEntry) {
+              var schema = objectEntry.value;
+              var key = objectEntry.key;
+              ArrayShape arrayShape = getShape(schema['type']);
+              if (widget.data[entry.key][i][key] == null) {
+                widget.data[entry.key][i][key] = schema['default'];
+              }
+              if (arrayShape.baseType == 'float') {
+                final unit = schema['unit'];
+                if (unit != null &&
+                    widget.data[entry.key][i]['${key}_shown_unitprefix'] ==
+                        null) {
+                  widget.data[entry.key][i]['${key}_shown_unitprefix'] = "";
+                }
+              }
+            });
+          }
+        }
+      } else {
+        var schema = entry.value;
+        var key = entry.key;
+
+        if (arrayShape.depth == 0) {
+          if (widget.data[key] == null) {
+            widget.data[key] = schema['default'];
+          }
+        } else if (arrayShape.depth == 1) {
+          List<num> emptyArray = [];
+          for (int i = 0; i < arrayShape.arrayDepths[0]; i++) {
+            emptyArray.add(schema['default']);
+          }
+          widget.data[entry.key] ??= emptyArray;
+          List<num> xArray = [];
+          int n = arrayShape.arrayDepths[0] > 0
+              ? arrayShape.arrayDepths[0]
+              : widget.data[entry.key].length;
+          for (int i = 0; i < n; i++) {
+            if (get(widget.data[entry.key], i) != null) {
+              xArray.add(get(widget.data[entry.key], i));
+            } else {
+              xArray.add(schema['default']);
+            }
+          }
+          widget.data[entry.key] = xArray;
+        }
+
+        if (arrayShape.baseType == 'float') {
+          final unit = schema['unit'];
+          if (unit != null && widget.data['${key}_shown_unitprefix'] == null) {
+            widget.data['${key}_shown_unitprefix'] = "";
+          }
+        }
+      }
+    });
+
+    widget.schema['properties'].entries.forEach((entry) {
+      final exp = entry.value['exp'];
+      if (exp != null && exp is List && exp.isNotEmpty) {
+        evaluateAndUpdate(exp, [entry.key]);
+      }
+    });
+
+    widget.onValueChange(widget.data);
   }
 
   void evaluateAndUpdate(List<dynamic> expressions, List<String> done) {
@@ -353,22 +565,84 @@ class _DynamicFormState extends State<DynamicForm> {
     }
   }
 
-  Widget _buildField(String key, dynamic value) {
-    ArrayShape arrayShape = getShape(value['type']);
+  String? textValidator(String? text, dynamic schema) {
+    if (text == null) {
+      return 'The value cannot be null.';
+    }
+    if (schema['minLength'] != null && text!.length < schema['minLength']) {
+      return 'Min length is ${schema['minLength']} character(s)';
+    }
+    if (schema['maxLength'] != null && text!.length > schema['maxLength']) {
+      return 'Max length is ${schema['maxLength']} character(s)';
+    }
+    return null;
+  }
+
+  String? numTextValidator(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Invalid number';
+    }
+    try {
+      num.parse(value);
+    } catch (e) {
+      return 'Invalid number';
+    }
+    return null;
+  }
+
+  String? numValidator(num value, dynamic schema) {
+    if (schema['maximum'] == null && schema['minimum'] != null) {
+      if (value < (schema['minimum'] as num)) {
+        return 'Value out of range';
+      }
+    } else if (schema['maximum'] != null && schema['minimum'] == null) {
+      if (value > (schema['maximum'] as num)) {
+        return 'Value out of range';
+      }
+    } else if (schema['minimum'] != null && schema['maximum'] != null) {
+      if (value < (schema['minimum'] as num) ||
+          value > (schema['maximum'] as num)) {
+        return 'Value out of range';
+      }
+    }
+    return null;
+  }
+
+  String? dateTimeValidator(String value) {
+    try {
+      DateTime.parse(value);
+      return null; // If no exception occurs, the input is valid
+    } catch (e) {
+      return 'Invalid date-time format.';
+    }
+  }
+
+  String? durationValidator(num value) {
+    if (value < 0) {
+      return 'Invalid duration value. It should be a positive integer number.';
+    }
+    return null;
+  }
+
+  Widget _buildField(
+      String key, Map<String, dynamic> schema, Map<String, dynamic> data) {
+    ArrayShape arrayShape = getShape(schema['type']);
 
     switch (arrayShape.baseType) {
       case 'string':
         if (arrayShape.depth == 0) {
           return TextFormField(
-            decoration: InputDecoration(labelText: value['title']),
-            onChanged: (text) => widget.data[key] = text,
-            initialValue: widget.data[key],
+            decoration: InputDecoration(labelText: schema['title']),
+            onChanged: (newValue) {
+              setState(() {
+                data[key] = newValue;
+                widget.onValueChange(widget.data);
+              });
+            },
+            initialValue: data[key],
+            autovalidateMode: AutovalidateMode.onUserInteraction,
             validator: (text) {
-              if (value['maxLength'] != null &&
-                  text!.length > value['maxLength']) {
-                return 'Max length is ${value['maxLength']} characters';
-              }
-              return null;
+              return textValidator(text, schema);
             },
           );
         } else {
@@ -376,68 +650,107 @@ class _DynamicFormState extends State<DynamicForm> {
         }
       case 'richtext': // Handle rich text case here
         return MarkdownEditor(
-          value: widget.data[key],
-          title: value['title'],
+          value: data[key],
+          title: schema['title'],
           onValueChanged: (newValue) {
             setState(() {
-              widget.data[key] = newValue;
+              data[key] = newValue;
               widget.onValueChange(widget.data);
             });
           },
         );
       case 'integer':
-        final exp = value['exp'];
+        final exp = schema['exp'];
         if (arrayShape.depth == 0) {
           return NumberField(
-            value: widget.data[key],
-            title: value['title'],
+            value: data[key],
+            title: schema['title'],
             type: NumberFieldType.integer,
             onValueChange: (newValue) {
               setState(() {
-                widget.data[key] = newValue;
+                data[key] = newValue;
                 if (exp != null && exp is List && exp.isNotEmpty) {
                   evaluateAndUpdate(exp, [key]);
                 }
                 widget.onValueChange(widget.data);
               });
             },
-            min: value['minimum']?.toInt(),
-            max: value['maximum']?.toInt(),
+            min: schema['minimum']?.toInt(),
+            max: schema['maximum']?.toInt(),
           );
         } else if (arrayShape.depth == 1) {
-          return ListNumbers(
-            values: widget.data[key],
-            title: value['title'],
-            type: NumberFieldType.integer,
-            onValueChange: (newValue) {
-              setState(() {
-                widget.data[key] = newValue;
-                if (exp != null && exp is List && exp.isNotEmpty) {
-                  evaluateAndUpdate(exp, [key]);
-                }
-                widget.onValueChange(widget.data);
-              });
-            },
-            min: value['minimum']?.toInt(),
-            max: value['maximum']?.toInt(),
-          );
+          if (arrayShape.arrayDepths[0] > 0) {
+            return ListNumbers(
+              values: data[key],
+              title: schema['title'],
+              type: NumberFieldType.integer,
+              onValueChange: (newValue) {
+                setState(() {
+                  data[key] = newValue;
+                  if (exp != null && exp is List && exp.isNotEmpty) {
+                    evaluateAndUpdate(exp, [key]);
+                  }
+                  widget.onValueChange(widget.data);
+                });
+              },
+              min: schema['minimum']?.toInt(),
+              max: schema['maximum']?.toInt(),
+            );
+          } else {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ListNumbers(
+                  values: data[key],
+                  title: schema['title'],
+                  type: NumberFieldType.integer,
+                  onValueChange: (newValue) {
+                    setState(() {
+                      data[key] = newValue;
+                      if (exp != null && exp is List && exp.isNotEmpty) {
+                        evaluateAndUpdate(exp, [key]);
+                      }
+                      widget.onValueChange(widget.data);
+                    });
+                  },
+                  min: schema['minimum']?.toInt(),
+                  max: schema['maximum']?.toInt(),
+                  withDeleteAction: true,
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          data[key].add(schema['default']);
+                          widget.onValueChange(widget.data);
+                        });
+                      },
+                      child: Text('Add'),
+                    ),
+                  ],
+                ),
+              ],
+            );
+          }
         } else {
           return SizedBox.shrink();
         }
       case 'float':
-        final unit = value['unit'] ?? '';
-        final exp = value['exp'];
+        final unit = schema['unit'];
+        final exp = schema['exp'];
         if (arrayShape.depth == 0) {
           return NumberField(
-            value: widget.data[key],
-            title: value['title'],
+            value: data[key],
+            title: schema['title'],
             unit: unit,
             type: NumberFieldType.float,
-            unitPrefix:
-                unit != null ? widget.data['${key}_shown_unitprefix'] : null,
+            unitPrefix: unit != null ? data['${key}_shown_unitprefix'] : null,
             onValueChange: (newValue) {
               setState(() {
-                widget.data[key] = newValue;
+                data[key] = newValue;
                 if (exp != null && exp is List && exp.isNotEmpty) {
                   evaluateAndUpdate(exp, [key]);
                 }
@@ -446,49 +759,99 @@ class _DynamicFormState extends State<DynamicForm> {
             },
             onUnitPrefixChange: (newPrefix) {
               setState(() {
-                widget.data['${key}_shown_unitprefix'] = newPrefix;
+                data['${key}_shown_unitprefix'] = newPrefix;
+                widget.onValueChange(widget.data);
               });
             },
-            min: value['minimum']?.toDouble(),
-            max: value['maximum']?.toDouble(),
+            min: schema['minimum']?.toDouble(),
+            max: schema['maximum']?.toDouble(),
           );
         } else if (arrayShape.depth == 1) {
-          return ListNumbers(
-            values: widget.data[key],
-            title: value['title'],
-            unit: unit,
-            type: NumberFieldType.float,
-            unitPrefix:
-                unit != null ? widget.data['${key}_shown_unitprefix'] : null,
-            onValueChange: (newValue) {
-              setState(() {
-                widget.data[key] = newValue;
-                if (exp != null && exp is List && exp.isNotEmpty) {
-                  evaluateAndUpdate(exp, [key]);
-                }
-                widget.onValueChange(widget.data);
-              });
-            },
-            onUnitPrefixChange: (newPrefix) {
-              setState(() {
-                widget.data['${key}_shown_unitprefix'] = newPrefix;
-              });
-            },
-            min: value['minimum']?.toDouble(),
-            max: value['maximum']?.toDouble(),
-          );
+          if (arrayShape.arrayDepths[0] > 0) {
+            return ListNumbers(
+              values: data[key],
+              title: schema['title'],
+              unit: unit,
+              type: NumberFieldType.float,
+              unitPrefix: unit != null ? data['${key}_shown_unitprefix'] : null,
+              onValueChange: (newValue) {
+                setState(() {
+                  data[key] = newValue;
+                  if (exp != null && exp is List && exp.isNotEmpty) {
+                    evaluateAndUpdate(exp, [key]);
+                  }
+                  widget.onValueChange(widget.data);
+                });
+              },
+              onUnitPrefixChange: (newPrefix) {
+                setState(() {
+                  data['${key}_shown_unitprefix'] = newPrefix;
+                  widget.onValueChange(widget.data);
+                });
+              },
+              min: schema['minimum']?.toDouble(),
+              max: schema['maximum']?.toDouble(),
+            );
+          } else {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ListNumbers(
+                  values: data[key],
+                  title: schema['title'],
+                  unit: unit,
+                  type: NumberFieldType.float,
+                  unitPrefix:
+                      unit != null ? data['${key}_shown_unitprefix'] : null,
+                  onValueChange: (newValue) {
+                    setState(() {
+                      data[key] = newValue;
+                      if (exp != null && exp is List && exp.isNotEmpty) {
+                        evaluateAndUpdate(exp, [key]);
+                      }
+                      widget.onValueChange(widget.data);
+                    });
+                  },
+                  onUnitPrefixChange: (newPrefix) {
+                    setState(() {
+                      data['${key}_shown_unitprefix'] = newPrefix;
+                      widget.onValueChange(widget.data);
+                    });
+                  },
+                  min: schema['minimum']?.toDouble(),
+                  max: schema['maximum']?.toDouble(),
+                  withDeleteAction: true,
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          data[key].add(schema['default']);
+                          widget.onValueChange(widget.data);
+                        });
+                      },
+                      child: Text('Add'),
+                    ),
+                  ],
+                ),
+              ],
+            );
+          }
         } else {
           return SizedBox.shrink();
         }
       case 'boolean':
         return Row(
           children: [
-            Text(value['title']),
+            Text(schema['title']),
             Checkbox(
-              value: widget.data[key] ?? false,
+              value: data[key] ?? false,
               onChanged: (bool? newValue) {
                 setState(() {
-                  widget.data[key] = newValue;
+                  data[key] = newValue;
                   widget.onValueChange(widget.data);
                 });
               },
@@ -497,45 +860,45 @@ class _DynamicFormState extends State<DynamicForm> {
         );
       case 'date':
         return DateTimeField(
-          value: widget.data[key], // Initial value
-          title: value['title'], // Desired format
+          value: data[key], // Initial value
+          title: schema['title'], // Desired format
           type: DateTimeFieldType.date,
           onValueChange: (newDateTime) {
             setState(() {
-              widget.data[key] = newDateTime;
+              data[key] = newDateTime;
               widget.onValueChange(widget.data);
             });
           },
         );
       case 'duration':
         return DurationField(
-          value: widget.data[key], // 1 day, 1 hour, 0 minutes, 0 seconds
-          title: value['title'],
+          value: data[key], // 1 day, 1 hour, 0 minutes, 0 seconds
+          title: schema['title'],
           onValueChange: (value) {
             // Handle value change (value will be in seconds)
             setState(() {
-              widget.data[key] = value;
+              data[key] = value;
               widget.onValueChange(widget.data);
             });
           },
         );
       case 'datetime':
         return DateTimeField(
-          value: widget.data[key], // Initial value
-          title: value['title'], // Desired format
+          value: data[key], // Initial value
+          title: schema['title'], // Desired format
           type: DateTimeFieldType.datetime,
           onValueChange: (newDateTime) {
             setState(() {
-              widget.data[key] = newDateTime;
+              data[key] = newDateTime;
               widget.onValueChange(widget.data);
             });
           },
         );
       case 'enum':
         return DropdownButtonFormField<String>(
-          decoration: InputDecoration(labelText: value['title']),
-          value: widget.data[key],
-          items: (value['enum'] as List<dynamic>)
+          decoration: InputDecoration(labelText: schema['title']),
+          value: data[key],
+          items: (schema['enum'] as List<dynamic>)
               .map((item) => DropdownMenuItem<String>(
                     value: item as String,
                     child: Text(item),
@@ -543,18 +906,268 @@ class _DynamicFormState extends State<DynamicForm> {
               .toList(),
           onChanged: (newValue) {
             setState(() {
-              widget.data[key] = newValue;
+              data[key] = newValue;
               widget.onValueChange(widget.data);
             });
           },
         );
+      case 'object':
+        if (arrayShape.depth == 0) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(schema['title']),
+              Row(
+                children: schema['properties'].entries.map<Widget>((entry) {
+                  return Expanded(
+                    child: Padding(
+                        padding: const EdgeInsets.only(left: 10),
+                        child: _buildField(entry.key, entry.value, data[key])),
+                  );
+                }).toList(),
+              ),
+            ],
+          );
+        } else if (arrayShape.depth == 1) {
+          if (arrayShape.arrayDepths[0] > 0) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(schema['title']),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: List.generate(
+                    data[key].length,
+                    (index) => Row(
+                      children:
+                          schema['properties'].entries.map<Widget>((entry) {
+                        return Expanded(
+                          child: Padding(
+                              padding: const EdgeInsets.only(left: 10),
+                              child: _buildField(
+                                  entry.key, entry.value, data[key][index])),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          } else {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(schema['title']),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: List.generate(
+                    data[key].length,
+                    (index) => Row(
+                      children: [
+                        ...schema['properties'].entries.map<Widget>((entry) {
+                          return Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.only(left: 10),
+                              child: _buildField(
+                                  entry.key, entry.value, data[key][index]),
+                            ),
+                          );
+                        }).toList(),
+                        IconButton(
+                          icon: Icon(Icons.delete),
+                          onPressed: () {
+                            data[key].removeAt(index);
+                            widget.onValueChange(widget.data);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        Map<String, dynamic> x = {};
+                        schema['properties'].entries.forEach((objectEntry) {
+                          var subSchema = objectEntry.value;
+                          var subKey = objectEntry.key;
+                          ArrayShape arrayShape = getShape(subSchema['type']);
+                          x[subKey] = subSchema['default'];
+                          if (arrayShape.baseType == 'float') {
+                            final unit = subSchema['unit'];
+                            if (unit != null) {
+                              x['${subKey}_shown_unitprefix'] = "";
+                            }
+                          }
+                        });
+                        setState(() {
+                          data[key].add(x);
+                          widget.onValueChange(widget.data);
+                        });
+                      },
+                      child: Text('Add'),
+                    ),
+                  ],
+                ),
+              ],
+            );
+          }
+        } else {
+          return SizedBox.shrink();
+        }
       default:
         return SizedBox.shrink();
     }
   }
 
+  Map<String, String?> doValidation() {
+    final Map<String, String?> errors = {};
+
+    for (var entry in widget.schema['properties'].entries) {
+      var key = entry.key;
+      var schema = entry.value;
+      ArrayShape arrayShape = getShape(schema['type']);
+
+      switch (arrayShape.baseType) {
+        case 'string':
+          var error = textValidator(widget.data[key], schema);
+          if (error != null) {
+            errors[key] = error;
+          } else {
+            errors.remove(key);
+          }
+        case 'richtext':
+          if (widget.data[key] == null) {
+            errors[key] = 'The value cannot be null.';
+          } else {
+            errors.remove(key);
+          }
+        case 'integer':
+          if (widget.data[key] == null) {
+            errors[key] = 'The value cannot be null.';
+          } else {
+            if (arrayShape.depth == 0) {
+              var error = numValidator(widget.data[key], schema);
+              if (error != null) {
+                errors[key] = error;
+              } else {
+                errors.remove(key);
+              }
+            } else if (arrayShape.depth == 1) {
+              if (widget.data[key] is List) {
+                List<dynamic> list = widget.data[key];
+                for (int index = 0; index < list.length; index++) {
+                  var item = list[index];
+                  var error = numValidator(item, schema);
+                  if (error != null) {
+                    errors[key] = error;
+                    break;
+                  } else {
+                    errors.remove(key);
+                  }
+                }
+              } else {
+                errors[key] = 'The data should be a list of integer numbers.';
+              }
+            }
+          }
+        case 'float':
+          if (widget.data[key] == null) {
+            errors[key] = 'The value cannot be null.';
+          } else {
+            if (arrayShape.depth == 0) {
+              var error = numValidator(widget.data[key], schema);
+              if (error != null) {
+                errors[key] = error;
+              } else {
+                errors.remove(key);
+              }
+            } else if (arrayShape.depth == 1) {
+              if (widget.data[key] is List) {
+                List<dynamic> list = widget.data[key];
+                for (int index = 0; index < list.length; index++) {
+                  var item = list[index];
+                  var error = numValidator(item, schema);
+                  if (error != null) {
+                    errors[key] = error;
+                    break;
+                  } else {
+                    errors.remove(key);
+                  }
+                }
+              } else {
+                errors[key] = 'The data should be a list of float numbers.';
+              }
+            }
+          }
+        case 'boolean':
+          if (widget.data[key] == null) {
+            errors[key] = 'The value cannot be null.';
+          } else {
+            errors.remove(key);
+          }
+        case 'date':
+          if (widget.data[key] == null) {
+            errors[key] = 'The value cannot be null.';
+          } else {
+            var error = dateTimeValidator(widget.data[key]);
+            if (error != null) {
+              errors[key] = error;
+            } else {
+              errors.remove(key);
+            }
+          }
+        case 'duration':
+          if (widget.data[key] == null) {
+            errors[key] = 'The value cannot be null.';
+          } else {
+            var error = durationValidator(widget.data[key]);
+            if (error != null) {
+              errors[key] = error;
+            } else {
+              errors.remove(key);
+            }
+          }
+        case 'datetime':
+          if (widget.data[key] == null) {
+            errors[key] = 'The value cannot be null.';
+          } else {
+            var error = dateTimeValidator(widget.data[key]);
+            if (error != null) {
+              errors[key] = error;
+            } else {
+              errors.remove(key);
+            }
+          }
+        case 'enum':
+          if (widget.data[key] == null) {
+            errors[key] = 'The value cannot be null.';
+          } else {
+            errors.remove(key);
+          }
+        case 'object':
+          if (widget.data[key] == null) {
+            errors[key] = 'The value cannot be null.';
+          } else {
+            errors.remove(key);
+          }
+        default:
+          throw Exception(
+              'The validation for ${arrayShape.baseType} type must be implemented.');
+      }
+    }
+    return errors;
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (checkData()) {
+      return Scaffold();
+    }
+    var errors = doValidation();
     return Scaffold(
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -574,16 +1187,18 @@ class _DynamicFormState extends State<DynamicForm> {
                 ...widget.schema['properties'].entries.map((entry) {
                   return Padding(
                       padding: const EdgeInsets.only(bottom: 15),
-                      child: _buildField(entry.key, entry.value));
+                      child: _buildField(entry.key, entry.value, widget.data));
                 }).toList(),
                 const SizedBox(height: 20),
                 ElevatedButton(
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      // Process the data
-                      print(widget.data);
-                    }
-                  },
+                  onPressed: errors.isEmpty
+                      ? () {
+                          if (_formKey.currentState!.validate()) {
+                            // Process the data
+                            print(widget.data);
+                          }
+                        }
+                      : null,
                   child: const Text('Submit'),
                 ),
               ],
