@@ -4,11 +4,15 @@ import 'package:powerpulse/src/devices/devices_view.dart';
 import 'package:powerpulse/src/settings/settings_view.dart';
 import 'package:powerpulse/src/dynamicForm/dynamicForm.dart';
 import 'package:powerpulse/src/network/websocket.dart';
+import 'package:powerpulse/src/plot/plot.dart';
 
 class MethodApp extends StatelessWidget {
-  MethodApp(
-      {Key? key, required this.type, required this.id, required this.title})
-      : super(key: key);
+  MethodApp({
+    Key? key,
+    required this.type,
+    required this.id,
+    required this.title,
+  }) : super(key: key);
   static const routeName = '/method';
   final _controller = SidebarXController(selectedIndex: 0, extended: true);
   final _key = GlobalKey<ScaffoldState>();
@@ -25,22 +29,23 @@ class MethodApp extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: canvasColor,
         title: Text(type + ' ' + title),
-        leading: isSmallScreen
-            ? Row(
-                children: <Widget>[
-                  const BackButton(),
-                  IconButton(
-                    onPressed: () {
-                      // if (!Platform.isAndroid && !Platform.isIOS) {
-                      //   _controller.setExtended(true);
-                      // }
-                      _key.currentState?.openDrawer();
-                    },
-                    icon: const Icon(Icons.menu),
-                  ),
-                ],
-              )
-            : const BackButton(),
+        leading:
+            isSmallScreen
+                ? Row(
+                  children: <Widget>[
+                    const BackButton(),
+                    IconButton(
+                      onPressed: () {
+                        // if (!Platform.isAndroid && !Platform.isIOS) {
+                        //   _controller.setExtended(true);
+                        // }
+                        _key.currentState?.openDrawer();
+                      },
+                      icon: const Icon(Icons.menu),
+                    ),
+                  ],
+                )
+                : const BackButton(),
         leadingWidth: isSmallScreen ? 90 : null,
         actions: [
           IconButton(
@@ -69,9 +74,7 @@ class MethodApp extends StatelessWidget {
           if (!isSmallScreen) MethodSidebar(controller: _controller),
           Expanded(
             child: Center(
-              child: _ScreensExampleWidget(
-                controller: _controller,
-              ),
+              child: _ScreensExampleWidget(controller: _controller),
             ),
           ),
         ],
@@ -81,11 +84,9 @@ class MethodApp extends StatelessWidget {
 }
 
 class MethodSidebar extends StatelessWidget {
-  const MethodSidebar({
-    Key? key,
-    required SidebarXController controller,
-  })  : _controller = controller,
-        super(key: key);
+  const MethodSidebar({Key? key, required SidebarXController controller})
+    : _controller = controller,
+      super(key: key);
 
   final SidebarXController _controller;
 
@@ -114,33 +115,23 @@ class MethodSidebar extends StatelessWidget {
         ),
         selectedItemDecoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: actionColor.withOpacity(0.37),
-          ),
+          border: Border.all(color: actionColor.withOpacity(0.37)),
           gradient: const LinearGradient(
             colors: [accentCanvasColor, canvasColor],
           ),
           boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.28),
-              blurRadius: 30,
-            )
+            BoxShadow(color: Colors.black.withOpacity(0.28), blurRadius: 30),
           ],
         ),
         iconTheme: IconThemeData(
           color: Colors.white.withOpacity(0.7),
           size: 20,
         ),
-        selectedIconTheme: const IconThemeData(
-          color: Colors.white,
-          size: 20,
-        ),
+        selectedIconTheme: const IconThemeData(color: Colors.white, size: 20),
       ),
       extendedTheme: const SidebarXTheme(
         width: 200,
-        decoration: BoxDecoration(
-          color: canvasColor,
-        ),
+        decoration: BoxDecoration(color: canvasColor),
       ),
       footerDivider: divider,
       headerBuilder: (context, extended) {
@@ -153,27 +144,27 @@ class MethodSidebar extends StatelessWidget {
         );
       },
       items: [
-        const SidebarXItem(
-          icon: Icons.input,
-          label: 'Inputs',
-        ),
-        const SidebarXItem(
-          icon: Icons.analytics,
-          label: 'Figure',
-        ),
+        const SidebarXItem(icon: Icons.input, label: 'Inputs'),
+        const SidebarXItem(icon: Icons.analytics, label: 'Figure'),
         SidebarXItem(
           icon: Icons.settings,
           label: 'Settings',
           selectable: false,
-          onTap: () =>
-              Navigator.restorablePushNamed(context, SettingsView.routeName),
+          onTap:
+              () => Navigator.restorablePushNamed(
+                context,
+                SettingsView.routeName,
+              ),
         ),
         SidebarXItem(
           icon: Icons.device_unknown,
           label: 'Devices',
           selectable: false,
-          onTap: () =>
-              Navigator.restorablePushNamed(context, DeviceScanner.routeName),
+          onTap:
+              () => Navigator.restorablePushNamed(
+                context,
+                DeviceScanner.routeName,
+              ),
         ),
         SidebarXItem(
           icon: Icons.exit_to_app,
@@ -189,10 +180,7 @@ class MethodSidebar extends StatelessWidget {
 class _ScreensExampleWidget extends StatefulWidget {
   final SidebarXController controller;
 
-  const _ScreensExampleWidget({
-    super.key,
-    required this.controller,
-  });
+  const _ScreensExampleWidget({super.key, required this.controller});
 
   @override
   _ScreensExampleWidgetState createState() => _ScreensExampleWidgetState();
@@ -246,13 +234,9 @@ class _ScreensExampleWidgetState extends State<_ScreensExampleWidget> {
           "v_shown_unitprefix": "",
           "int": 3.0,
         },
-        {
-          "t": 4.0,
-          "t_shown_unitprefix": "",
-          "v": 5.0,
-        },
-        null
-      ]
+        {"t": 4.0, "t_shown_unitprefix": "", "v": 5.0},
+        null,
+      ],
     };
   }
 
@@ -265,63 +249,198 @@ class _ScreensExampleWidgetState extends State<_ScreensExampleWidget> {
         switch (widget.controller.selectedIndex) {
           case 0:
             return ConstrainedBox(
-                constraints: const BoxConstraints(
-                  maxWidth: 800,
-                ),
-                child: DynamicForm(
-                    schema: const {
-                      "title": "Sample Form",
+              constraints: const BoxConstraints(maxWidth: 800),
+              child: DynamicForm(
+                schema: const {
+                  "title": "Sample Form",
+                  "properties": {
+                    "description": {
+                      "type": "richtext",
+                      "title": "my description",
+                      "default": "",
+                    },
+                    "name": {
+                      "type": "string",
+                      "title": "My Name",
+                      "description": "Enter your full name.",
+                      "maxLength": 50,
+                      "default": "",
+                    },
+                    "time": {
+                      "type": "float",
+                      "title": "My Time",
+                      "description": "Enter time.",
+                      "minimum": 0,
+                      "maximum": 100,
+                      "unit": "s",
+                      "default": 0,
+                    },
+                    "x": {
+                      "type": "float",
+                      "title": "x",
+                      "description": "Enter time.",
+                      "minimum": 0,
+                      "maximum": 100,
+                      "unit": "m",
+                      "default": 0,
+                      "exp": ["v = x / t"],
+                    },
+                    "v": {
+                      "type": "float",
+                      "title": "v",
+                      "description": "Enter time.",
+                      "minimum": 0,
+                      "maximum": 100,
+                      "unit": "m/s",
+                      "default": 0,
+                      "exp": ["x = v * t"],
+                    },
+                    "t": {
+                      "type": "float",
+                      "title": "t",
+                      "description": "Enter time.",
+                      "minimum": 0,
+                      "maximum": 100,
+                      "unit": "s",
+                      "default": 0,
+                      "exp": ["x = sqrt(t)", "int = t"],
+                    },
+                    "int": {
+                      "type": "integer",
+                      "title": "My Int",
+                      "description": "Enter an integer value.",
+                      "minimum": 1,
+                      "maximum": 10,
+                      "default": 1,
+                    },
+                    "bool": {
+                      "type": "boolean",
+                      "title": "My Bool",
+                      "description": "Toggle the switch.",
+                      "default": false,
+                    },
+                    "birthdate": {
+                      "type": "date",
+                      "title": "Birth Date",
+                      "default": "2000-01-01",
+                    },
+                    "run_time": {
+                      "type": "duration",
+                      "title": "Run Time",
+                      "default": 0,
+                    },
+                    "meeting_datetime": {
+                      "type": "datetime",
+                      "title": "Meeting Date & Time",
+                      "default": "2000-01-01",
+                    },
+                    "gender": {
+                      "type": "enum",
+                      "title": "Gender",
+                      "enum": ["Male", "Female", "Other"],
+                      "default": "Male",
+                    },
+                    "times": {
+                      "type": "float[10]",
+                      "title": "My Times",
+                      "description": "Enter time.",
+                      "minimum": 0,
+                      "maximum": 100,
+                      "unit": "s",
+                      "default": 0.0,
+                    },
+                    "numbers": {
+                      "type": "integer[10]",
+                      "title": "My numbers",
+                      "description": "Enter number.",
+                      "minimum": 0,
+                      "maximum": 100,
+                      "default": 0,
+                    },
+                    "numbers2": {
+                      "type": "integer[10]",
+                      "title": "My numbers2",
+                      "description": "Enter number.",
+                      "minimum": 0,
+                      "maximum": 100,
+                      "default": 0,
+                    },
+                    "plot1": {
+                      "type": "plot",
+                      "title": "My plot",
+                      "plotType": "line",
+                      "x": ["times"],
+                      "y": ["numbers", "numbers2"],
+                    },
+                    "xarr": {
+                      "type": "float[]",
+                      "title": "x",
+                      "description": "Enter x array.",
+                      "minimum": 0,
+                      "maximum": 100,
+                      "unit": "m",
+                      "exp": ["normx = norm(xarr)"],
+                      "default": 0.0,
+                    },
+                    "normx": {
+                      "type": "float",
+                      "title": "normx",
+                      "description": "Enter time.",
+                      "minimum": 0,
+                      "maximum": 20,
+                      "unit": "m",
+                      "default": 0.0,
+                    },
+                    "varr": {
+                      "type": "float[]",
+                      "title": "v",
+                      "description": "Enter v array.",
+                      "minimum": 0,
+                      "maximum": 100,
+                      "unit": "m/s",
+                      "default": 0.0,
+                      "exp": ["xarr = sqrt(varr) * 4"],
+                    },
+                    "tarr": {
+                      "type": "float[]",
+                      "title": "t",
+                      "description": "Enter time array.",
+                      "minimum": 0,
+                      "maximum": 100,
+                      "unit": "s",
+                      "default": 0.0,
+                      "exp": ["xarr = floor(tarr)", "intxarr = floor(tarr)"],
+                    },
+                    "intxarr": {
+                      "type": "integer[]",
+                      "title": "t",
+                      "description": "Enter time array.",
+                      "minimum": 0,
+                      "maximum": 50,
+                      "default": 0,
+                    },
+                    "myobject": {
+                      "type": 'object',
+                      "title": "my object",
+                      "description": "Enter object.",
                       "properties": {
-                        "description": {
-                          "type": "richtext",
-                          "title": "my description",
-                          "default": "",
-                        },
-                        "name": {
-                          "type": "string",
-                          "title": "My Name",
-                          "description": "Enter your full name.",
-                          "maxLength": 50,
-                          "default": "",
-                        },
-                        "time": {
-                          "type": "float",
-                          "title": "My Time",
-                          "description": "Enter time.",
-                          "minimum": 0,
-                          "maximum": 100,
-                          "unit": "s",
-                          "default": 0,
-                        },
-                        "x": {
-                          "type": "float",
-                          "title": "x",
-                          "description": "Enter time.",
-                          "minimum": 0,
-                          "maximum": 100,
-                          "unit": "m",
-                          "default": 0,
-                          "exp": ["v = x / t"]
-                        },
-                        "v": {
+                        "t": {
                           "type": "float",
                           "title": "v",
                           "description": "Enter time.",
                           "minimum": 0,
                           "maximum": 100,
-                          "unit": "m/s",
-                          "default": 0,
-                          "exp": ["x = v * t"]
-                        },
-                        "t": {
-                          "type": "float",
-                          "title": "t",
-                          "description": "Enter time.",
-                          "minimum": 0,
-                          "maximum": 100,
                           "unit": "s",
                           "default": 0,
-                          "exp": ["x = sqrt(t)", "int = t"]
+                        },
+                        "v": {
+                          "type": "float",
+                          "title": "v",
+                          "description": "Enter voltage.",
+                          "minimum": 0,
+                          "maximum": 100,
+                          "unit": "Volt",
+                          "default": 0,
                         },
                         "int": {
                           "type": "integer",
@@ -331,188 +450,77 @@ class _ScreensExampleWidgetState extends State<_ScreensExampleWidget> {
                           "maximum": 10,
                           "default": 1,
                         },
-                        "bool": {
-                          "type": "boolean",
-                          "title": "My Bool",
-                          "description": "Toggle the switch.",
-                          "default": false,
-                        },
-                        "birthdate": {
-                          "type": "date",
-                          "title": "Birth Date",
-                          "default": "2000-01-01",
-                        },
-                        "run_time": {
-                          "type": "duration",
-                          "title": "Run Time",
-                          "default": 0,
-                        },
-                        "meeting_datetime": {
-                          "type": "datetime",
-                          "title": "Meeting Date & Time",
-                          "default": "2000-01-01",
-                        },
-                        "gender": {
-                          "type": "enum",
-                          "title": "Gender",
-                          "enum": ["Male", "Female", "Other"],
-                          "default": "Male",
-                        },
-                        "times": {
-                          "type": "float[10]",
-                          "title": "My Times",
-                          "description": "Enter time.",
-                          "minimum": 0,
-                          "maximum": 100,
-                          "unit": "s",
-                          "default": 0.0,
-                        },
-                        "numbers": {
-                          "type": "integer[]",
-                          "title": "My numbers",
-                          "description": "Enter number.",
-                          "minimum": 0,
-                          "maximum": 100,
-                          "default": 0,
-                        },
-                        "xarr": {
-                          "type": "float[]",
-                          "title": "x",
-                          "description": "Enter x array.",
-                          "minimum": 0,
-                          "maximum": 100,
-                          "unit": "m",
-                          "exp": ["normx = norm(xarr)"],
-                          "default": 0.0,
-                        },
-                        "normx": {
-                          "type": "float",
-                          "title": "normx",
-                          "description": "Enter time.",
-                          "minimum": 0,
-                          "maximum": 20,
-                          "unit": "m",
-                          "default": 0.0,
-                        },
-                        "varr": {
-                          "type": "float[]",
-                          "title": "v",
-                          "description": "Enter v array.",
-                          "minimum": 0,
-                          "maximum": 100,
-                          "unit": "m/s",
-                          "default": 0.0,
-                          "exp": ["xarr = sqrt(varr) * 4"]
-                        },
-                        "tarr": {
-                          "type": "float[]",
-                          "title": "t",
-                          "description": "Enter time array.",
-                          "minimum": 0,
-                          "maximum": 100,
-                          "unit": "s",
-                          "default": 0.0,
-                          "exp": ["xarr = floor(tarr)", "intxarr = floor(tarr)"]
-                        },
-                        "intxarr": {
-                          "type": "integer[]",
-                          "title": "t",
-                          "description": "Enter time array.",
-                          "minimum": 0,
-                          "maximum": 50,
-                          "default": 0,
-                        },
-                        "myobject": {
-                          "type": 'object',
-                          "title": "my object",
-                          "description": "Enter object.",
-                          "properties": {
-                            "t": {
-                              "type": "float",
-                              "title": "v",
-                              "description": "Enter time.",
-                              "minimum": 0,
-                              "maximum": 100,
-                              "unit": "s",
-                              "default": 0,
-                            },
-                            "v": {
-                              "type": "float",
-                              "title": "v",
-                              "description": "Enter voltage.",
-                              "minimum": 0,
-                              "maximum": 100,
-                              "unit": "Volt",
-                              "default": 0,
-                            },
-                            "int": {
-                              "type": "integer",
-                              "title": "My Int",
-                              "description": "Enter an integer value.",
-                              "minimum": 1,
-                              "maximum": 10,
-                              "default": 1,
-                            },
-                          }
-                        },
-                        "myobjectlist": {
-                          "type": 'object[]',
-                          "title": "my object list",
-                          "description": "Enter object.",
-                          "properties": {
-                            "t": {
-                              "type": "float",
-                              "title": "v",
-                              "description": "Enter time.",
-                              "minimum": 0,
-                              "maximum": 100,
-                              "unit": "s",
-                              "default": 0,
-                            },
-                            "v": {
-                              "type": "float",
-                              "title": "v",
-                              "description": "Enter voltage.",
-                              "minimum": 0,
-                              "maximum": 100,
-                              "unit": "Volt",
-                              "default": 0,
-                            },
-                            "int": {
-                              "type": "integer",
-                              "title": "My Int",
-                              "description": "Enter an integer value.",
-                              "minimum": 1,
-                              "maximum": 10,
-                              "default": 1,
-                            },
-                          }
-                        }
-                      }
+                      },
                     },
-                    data: data,
-                    onValueChange: (value) {
-                      print(value);
-                      setState(() {
-                        data = value;
-                      });
-                    }));
+                    "myobjectlist": {
+                      "type": 'object[]',
+                      "title": "my object list",
+                      "description": "Enter object.",
+                      "properties": {
+                        "t": {
+                          "type": "float",
+                          "title": "v",
+                          "description": "Enter time.",
+                          "minimum": 0,
+                          "maximum": 100,
+                          "unit": "s",
+                          "default": 0,
+                        },
+                        "v": {
+                          "type": "float",
+                          "title": "v",
+                          "description": "Enter voltage.",
+                          "minimum": 0,
+                          "maximum": 100,
+                          "unit": "Volt",
+                          "default": 0,
+                        },
+                        "int": {
+                          "type": "integer",
+                          "title": "My Int",
+                          "description": "Enter an integer value.",
+                          "minimum": 1,
+                          "maximum": 10,
+                          "default": 1,
+                        },
+                      },
+                    },
+                  },
+                },
+                data: data,
+                onValueChange: (value) {
+                  print(value);
+                  setState(() {
+                    data = value;
+                  });
+                },
+              ),
+            );
           case 1:
+            // return WebSocketDemo();
+            // return Plot(title: "plot");
+            return Text('Not implemented yet.');
+          case 2:
             // return WebSocketDemo();
             return ListView.builder(
               padding: const EdgeInsets.only(top: 10),
               itemCount: 20,
-              itemBuilder: (context, index) => Container(
-                height: 100,
-                width: double.infinity,
-                constraints: const BoxConstraints(maxWidth: 200),
-                margin: const EdgeInsets.only(bottom: 10, right: 10, left: 10),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  color: Colors.deepOrangeAccent,
-                  boxShadow: const [BoxShadow()],
-                ),
-              ),
+              itemBuilder:
+                  (context, index) => Container(
+                    height: 100,
+                    width: double.infinity,
+                    constraints: const BoxConstraints(maxWidth: 200),
+                    margin: const EdgeInsets.only(
+                      bottom: 10,
+                      right: 10,
+                      left: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      color: Colors.deepOrangeAccent,
+                      boxShadow: const [BoxShadow()],
+                    ),
+                  ),
             );
           default:
             return Text('Not implemented yet.');

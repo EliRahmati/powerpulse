@@ -9,6 +9,7 @@ import 'package:intl/intl.dart';
 import 'package:expressions/expressions.dart';
 import 'dart:math';
 import 'package:ml_linalg/linalg.dart';
+import 'package:powerpulse/src/plot/plot.dart';
 
 num abs(num val) {
   return val.abs();
@@ -89,8 +90,11 @@ class ArrayShape {
   final int depth;
   final List<int> arrayDepths;
 
-  ArrayShape(
-      {required this.baseType, required this.depth, required this.arrayDepths});
+  ArrayShape({
+    required this.baseType,
+    required this.depth,
+    required this.arrayDepths,
+  });
 
   @override
   String toString() {
@@ -204,7 +208,9 @@ class CustomExpressionEvaluator extends ExpressionEvaluator {
             right is List &&
             left.length == right.length) {
           return List.generate(
-              left.length, (index) => left[index] * right[index] as num);
+            left.length,
+            (index) => left[index] * right[index] as num,
+          );
         }
       } else if (operator == '/') {
         if (left is num && right is num) {
@@ -217,7 +223,9 @@ class CustomExpressionEvaluator extends ExpressionEvaluator {
             right is List &&
             left.length == right.length) {
           return List.generate(
-              left.length, (index) => left[index] / right[index] as num);
+            left.length,
+            (index) => left[index] / right[index] as num,
+          );
         }
       } else if (operator == '+') {
         if (left is num && right is num) {
@@ -230,7 +238,9 @@ class CustomExpressionEvaluator extends ExpressionEvaluator {
             right is List &&
             left.length == right.length) {
           return List.generate(
-              left.length, (index) => left[index] + right[index] as num);
+            left.length,
+            (index) => left[index] + right[index] as num,
+          );
         }
       } else if (operator == '-') {
         if (left is num && right is num) {
@@ -243,7 +253,9 @@ class CustomExpressionEvaluator extends ExpressionEvaluator {
             right is List &&
             left.length == right.length) {
           return List.generate(
-              left.length, (index) => left[index] - right[index] as num);
+            left.length,
+            (index) => left[index] - right[index] as num,
+          );
         }
       } else if (operator == '^') {
         if (left is num && right is num) {
@@ -256,7 +268,9 @@ class CustomExpressionEvaluator extends ExpressionEvaluator {
             right is List &&
             left.length == right.length) {
           return List.generate(
-              left.length, (index) => pow(left[index], right[index]));
+            left.length,
+            (index) => pow(left[index], right[index]),
+          );
         }
       } else if (operator == '.') {
         if (fulContext.containsKey(operator)) {
@@ -328,9 +342,10 @@ class _DynamicFormState extends State<DynamicForm> {
               return true;
             }
           }
-          int n = arrayShape.arrayDepths[0] > 0
-              ? arrayShape.arrayDepths[0]
-              : widget.data[entry.key].length;
+          int n =
+              arrayShape.arrayDepths[0] > 0
+                  ? arrayShape.arrayDepths[0]
+                  : widget.data[entry.key].length;
           for (int i = 0; i < n; i++) {
             if (get(widget.data[entry.key], i) == null) {
               return true;
@@ -353,6 +368,7 @@ class _DynamicFormState extends State<DynamicForm> {
             }
           }
         }
+      } else if (arrayShape.baseType == 'plot') {
       } else {
         var schema = entry.value;
         var key = entry.key;
@@ -371,7 +387,10 @@ class _DynamicFormState extends State<DynamicForm> {
   }
 
   void setInitData(
-      Map<String, dynamic> schema, Map<String, dynamic> data, String key) {
+    Map<String, dynamic> schema,
+    Map<String, dynamic> data,
+    String key,
+  ) {
     ArrayShape arrayShape = getShape(schema['type']);
     if (data[key] == null) {
       data[key] = schema['default'];
@@ -414,9 +433,10 @@ class _DynamicFormState extends State<DynamicForm> {
             }
           });
         } else if (arrayShape.depth == 1) {
-          int n = arrayShape.arrayDepths[0] > 0
-              ? arrayShape.arrayDepths[0]
-              : widget.data[entry.key].length;
+          int n =
+              arrayShape.arrayDepths[0] > 0
+                  ? arrayShape.arrayDepths[0]
+                  : widget.data[entry.key].length;
           List<Map<String, dynamic>> emptyArray = [];
           for (int i = 0; i < arrayShape.arrayDepths[0]; i++) {
             Map<String, dynamic> x = {};
@@ -475,9 +495,10 @@ class _DynamicFormState extends State<DynamicForm> {
           }
           widget.data[entry.key] ??= emptyArray;
           List<num> xArray = [];
-          int n = arrayShape.arrayDepths[0] > 0
-              ? arrayShape.arrayDepths[0]
-              : widget.data[entry.key].length;
+          int n =
+              arrayShape.arrayDepths[0] > 0
+                  ? arrayShape.arrayDepths[0]
+                  : widget.data[entry.key].length;
           for (int i = 0; i < n; i++) {
             if (get(widget.data[entry.key], i) != null) {
               xArray.add(get(widget.data[entry.key], i));
@@ -523,8 +544,9 @@ class _DynamicFormState extends State<DynamicForm> {
         var evaluator = CustomExpressionEvaluator();
         var result = evaluator.eval(rhsExpression, widget.data);
 
-        ArrayShape arrayShape =
-            getShape(widget.schema['properties'][lhs]['type']);
+        ArrayShape arrayShape = getShape(
+          widget.schema['properties'][lhs]['type'],
+        );
         if (arrayShape.baseType == 'integer') {
           result = withList(toInt)(result);
         } else {
@@ -625,7 +647,10 @@ class _DynamicFormState extends State<DynamicForm> {
   }
 
   Widget _buildField(
-      String key, Map<String, dynamic> schema, Map<String, dynamic> data) {
+    String key,
+    Map<String, dynamic> schema,
+    Map<String, dynamic> data,
+  ) {
     ArrayShape arrayShape = getShape(schema['type']);
 
     switch (arrayShape.baseType) {
@@ -898,12 +923,15 @@ class _DynamicFormState extends State<DynamicForm> {
         return DropdownButtonFormField<String>(
           decoration: InputDecoration(labelText: schema['title']),
           value: data[key],
-          items: (schema['enum'] as List<dynamic>)
-              .map((item) => DropdownMenuItem<String>(
-                    value: item as String,
-                    child: Text(item),
-                  ))
-              .toList(),
+          items:
+              (schema['enum'] as List<dynamic>)
+                  .map(
+                    (item) => DropdownMenuItem<String>(
+                      value: item as String,
+                      child: Text(item),
+                    ),
+                  )
+                  .toList(),
           onChanged: (newValue) {
             setState(() {
               data[key] = newValue;
@@ -918,13 +946,15 @@ class _DynamicFormState extends State<DynamicForm> {
             children: [
               Text(schema['title']),
               Row(
-                children: schema['properties'].entries.map<Widget>((entry) {
-                  return Expanded(
-                    child: Padding(
-                        padding: const EdgeInsets.only(left: 10),
-                        child: _buildField(entry.key, entry.value, data[key])),
-                  );
-                }).toList(),
+                children:
+                    schema['properties'].entries.map<Widget>((entry) {
+                      return Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: 10),
+                          child: _buildField(entry.key, entry.value, data[key]),
+                        ),
+                      );
+                    }).toList(),
               ),
             ],
           );
@@ -941,13 +971,17 @@ class _DynamicFormState extends State<DynamicForm> {
                     (index) => Row(
                       children:
                           schema['properties'].entries.map<Widget>((entry) {
-                        return Expanded(
-                          child: Padding(
-                              padding: const EdgeInsets.only(left: 10),
-                              child: _buildField(
-                                  entry.key, entry.value, data[key][index])),
-                        );
-                      }).toList(),
+                            return Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.only(left: 10),
+                                child: _buildField(
+                                  entry.key,
+                                  entry.value,
+                                  data[key][index],
+                                ),
+                              ),
+                            );
+                          }).toList(),
                     ),
                   ),
                 ),
@@ -969,7 +1003,10 @@ class _DynamicFormState extends State<DynamicForm> {
                             child: Padding(
                               padding: const EdgeInsets.only(left: 10),
                               child: _buildField(
-                                  entry.key, entry.value, data[key][index]),
+                                entry.key,
+                                entry.value,
+                                data[key][index],
+                              ),
                             ),
                           );
                         }).toList(),
@@ -1008,7 +1045,7 @@ class _DynamicFormState extends State<DynamicForm> {
                           widget.onValueChange(widget.data);
                         });
                       },
-                      child: Text('Add'),
+                      child: const Text('Add'),
                     ),
                   ],
                 ),
@@ -1016,10 +1053,18 @@ class _DynamicFormState extends State<DynamicForm> {
             );
           }
         } else {
-          return SizedBox.shrink();
+          return const SizedBox.shrink();
         }
+      case 'plot':
+        return Plot(
+          title: schema['title'],
+          x: schema['x'],
+          y: schema['y'],
+          schema: widget.schema,
+          data: widget.data,
+        );
       default:
-        return SizedBox.shrink();
+        return const SizedBox.shrink();
     }
   }
 
@@ -1154,9 +1199,12 @@ class _DynamicFormState extends State<DynamicForm> {
           } else {
             errors.remove(key);
           }
+        case 'plot':
+          errors.remove(key);
         default:
           throw Exception(
-              'The validation for ${arrayShape.baseType} type must be implemented.');
+            'The validation for ${arrayShape.baseType} type must be implemented.',
+          );
       }
     }
     return errors;
@@ -1177,28 +1225,35 @@ class _DynamicFormState extends State<DynamicForm> {
             // Add this line to make the form scrollable
             child: Column(
               children: [
-                Row(children: [
-                  Text(
-                    widget.schema['title'],
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  )
-                ]),
+                Row(
+                  children: [
+                    Text(
+                      widget.schema['title'],
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 10),
                 ...widget.schema['properties'].entries.map((entry) {
                   return Padding(
-                      padding: const EdgeInsets.only(bottom: 15),
-                      child: _buildField(entry.key, entry.value, widget.data));
+                    padding: const EdgeInsets.only(bottom: 15),
+                    child: _buildField(entry.key, entry.value, widget.data),
+                  );
                 }).toList(),
                 const SizedBox(height: 20),
                 ElevatedButton(
-                  onPressed: errors.isEmpty
-                      ? () {
-                          if (_formKey.currentState!.validate()) {
-                            // Process the data
-                            print(widget.data);
+                  onPressed:
+                      errors.isEmpty
+                          ? () {
+                            if (_formKey.currentState!.validate()) {
+                              // Process the data
+                              print(widget.data);
+                            }
                           }
-                        }
-                      : null,
+                          : null,
                   child: const Text('Submit'),
                 ),
               ],
