@@ -1,27 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:powerpulse/src/dynamicForm/measurment.dart';
 import 'package:sidebarx/sidebarx.dart';
 import 'package:powerpulse/src/devices/recent_devices.dart';
 import 'package:powerpulse/src/settings/settings_view.dart';
-import 'method.dart';
-import 'method_list_view.dart';
 import 'package:powerpulse/src/network/ping_indicator.dart';
 import 'package:powerpulse/src/network/terminal.dart';
+import 'package:powerpulse/src/methods/methods.dart';
+import 'package:powerpulse/src/globals.dart' as globals;
+import 'package:provider/provider.dart';
+import 'package:powerpulse/src/app_provider.dart';
 
-class Methods extends StatelessWidget {
-  Methods({
-    super.key,
-    this.methods = const [
-      MethodType('IV'),
-      MethodType('EIS'),
-      MethodType('Pulse'),
-      MethodType('Battery'),
-    ],
-  });
-  static const routeName = '/methods';
+class StartPage extends StatelessWidget {
+  StartPage({super.key});
+  static const routeName = '/';
   static const title = 'PowerPulse';
   final _controller = SidebarXController(selectedIndex: 0, extended: true);
   final _key = GlobalKey<ScaffoldState>();
-  final List<MethodType> methods;
 
   @override
   Widget build(BuildContext context) {
@@ -62,17 +56,13 @@ class Methods extends StatelessWidget {
           // ),
         ],
       ),
-      drawer: MethodsSidebar(controller: _controller, methods: methods),
+      drawer: MainSidebar(controller: _controller),
       body: Row(
         children: [
-          if (!isSmallScreen)
-            MethodsSidebar(controller: _controller, methods: methods),
+          if (!isSmallScreen) MainSidebar(controller: _controller),
           Expanded(
             child: Center(
-              child: _MethodsListView(
-                controller: _controller,
-                methods: methods,
-              ),
+              child: _DeviceMethodsListView(controller: _controller),
             ),
           ),
         ],
@@ -81,16 +71,12 @@ class Methods extends StatelessWidget {
   }
 }
 
-class MethodsSidebar extends StatelessWidget {
-  MethodsSidebar({
-    Key? key,
-    required SidebarXController controller,
-    required this.methods,
-  }) : _controller = controller,
-       super(key: key);
+class MainSidebar extends StatelessWidget {
+  MainSidebar({Key? key, required SidebarXController controller})
+    : _controller = controller,
+      super(key: key);
 
   final SidebarXController _controller;
-  final List<MethodType> methods;
   final _key = GlobalKey<ScaffoldState>();
 
   @override
@@ -146,79 +132,131 @@ class MethodsSidebar extends StatelessWidget {
           ),
         );
       },
-      items:
-          methods.map((method) {
-            return SidebarXItem(
-              icon: Icons.analytics,
-              label: method.methodName,
-              onTap: () {
-                // if (!Platform.isAndroid && !Platform.isIOS) {
-                //   _controller.setExtended(true);
-                // }
-                _key.currentState?.openDrawer();
-              },
-            );
-          }).toList() +
-          [
-            SidebarXItem(
-              icon: Icons.settings,
-              label: 'Settings',
-              selectable: false,
-              onTap:
-                  () => Navigator.restorablePushNamed(
-                    context,
-                    SettingsView.routeName,
-                  ),
-            ),
-            SidebarXItem(
-              icon: Icons.device_hub,
-              label: 'Terminal',
-              selectable: false,
-              onTap:
-                  () => Navigator.restorablePushNamed(
-                    context,
-                    Terminal.routeName,
-                  ),
-            ),
-            SidebarXItem(
-              icon: Icons.device_unknown,
-              label: 'Devices',
-              selectable: false,
-              onTap:
-                  () => Navigator.restorablePushNamed(
-                    context,
-                    RecentDevices.routeName,
-                  ),
-            ),
-            // SidebarXItem(
-            //   icon: Icons.exit_to_app,
-            //   label: 'Exit',
-            //   selectable: false,
-            //   onTap: () => Navigator.of(context).pop(),
-            // ),
-          ],
+      items: [
+        const SidebarXItem(
+          icon: Icons.settings,
+          label: 'New Measurment',
+          selectable: false,
+        ),
+        SidebarXItem(
+          icon: Icons.settings,
+          label: 'My Measurments',
+          selectable: false,
+          onTap:
+              () => Navigator.restorablePushNamed(context, Methods.routeName),
+        ),
+        SidebarXItem(
+          icon: Icons.settings,
+          label: 'Settings',
+          selectable: false,
+          onTap:
+              () => Navigator.restorablePushNamed(
+                context,
+                SettingsView.routeName,
+              ),
+        ),
+        SidebarXItem(
+          icon: Icons.device_hub,
+          label: 'Terminal',
+          selectable: false,
+          onTap:
+              () => Navigator.restorablePushNamed(context, Terminal.routeName),
+        ),
+        SidebarXItem(
+          icon: Icons.device_unknown,
+          label: 'Devices',
+          selectable: false,
+          onTap:
+              () => Navigator.restorablePushNamed(
+                context,
+                RecentDevices.routeName,
+              ),
+        ),
+        // SidebarXItem(
+        //   icon: Icons.exit_to_app,
+        //   label: 'Exit',
+        //   selectable: false,
+        //   onTap: () => Navigator.of(context).pop(),
+        // ),
+      ],
     );
   }
 }
 
-class _MethodsListView extends StatelessWidget {
-  const _MethodsListView({
-    Key? key,
-    required this.controller,
-    required this.methods,
-  }) : super(key: key);
+class _DeviceMethodsListView extends StatefulWidget {
+  _DeviceMethodsListView({Key? key, required this.controller})
+    : super(key: key);
 
   final SidebarXController controller;
-  final List<MethodType> methods;
+
+  @override
+  State<_DeviceMethodsListView> createState() => _DeviceMethodsListViewState();
+}
+
+class _DeviceMethodsListViewState extends State<_DeviceMethodsListView> {
+  Map<dynamic, dynamic> data = {"inputs": {}, "outputs": {}, "figures": {}};
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final appProvider = Provider.of<AppProvider>(context);
     return AnimatedBuilder(
-      animation: controller,
+      animation: widget.controller,
       builder: (context, child) {
-        return MethodListView(
-          type: methods[controller.selectedIndex].methodName,
-        );
+        switch (widget.controller.selectedIndex) {
+          case 0:
+            if (appProvider.connectedDeviceMethods.isEmpty) {
+              return const Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 16),
+                    Text('Not connected to the device'),
+                  ],
+                ),
+              );
+            }
+            return ListView.builder(
+              itemCount: appProvider.connectedDeviceMethods.length,
+              itemBuilder: (context, index) {
+                List<String> keys =
+                    appProvider.connectedDeviceMethods.keys.toList();
+                return ListTile(
+                  title: Text(
+                    appProvider
+                        .connectedDeviceMethods[keys[index]]['inputs']['title'],
+                  ),
+                  selected: widget.controller.selectedIndex == index,
+                  onTap: () {
+                    // Optionally update controller.selectedIndex when tapping
+                    // widget.controller.selectIndex(index);
+                    Navigator.restorablePushNamed(
+                      context,
+                      Measurment.routeName,
+                      arguments: {
+                        'type': keys[index],
+                        'schema':
+                            appProvider.connectedDeviceMethods[keys[index]],
+                        'data': data,
+                      },
+                    );
+                  },
+                );
+              },
+            );
+          default:
+            return Text('Not implemented yet.');
+        }
       },
     );
   }

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:powerpulse/src/dynamicForm/output_figures.dart';
+import 'package:powerpulse/src/dynamicForm/output_data.dart';
 import 'package:sidebarx/sidebarx.dart';
-import 'package:powerpulse/src/devices/devices_view.dart';
+import 'package:powerpulse/src/devices/recent_devices.dart';
 import 'package:powerpulse/src/settings/settings_view.dart';
 import 'package:powerpulse/src/dynamicForm/dynamicForm.dart';
-import 'package:powerpulse/src/network/websocket.dart';
-import 'package:powerpulse/src/plot/plot.dart';
+import 'package:powerpulse/src/dynamicForm/figures.dart';
+import 'package:powerpulse/src/network/terminal.dart';
+import 'package:powerpulse/src/network/ping_indicator.dart';
 
 class MethodApp extends StatelessWidget {
   MethodApp({
@@ -47,25 +50,17 @@ class MethodApp extends StatelessWidget {
                 )
                 : const BackButton(),
         leadingWidth: isSmallScreen ? 90 : null,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              // Navigate to the settings page. If the user leaves and returns
-              // to the app after it has been killed while running in the
-              // background, the navigation stack is restored.
-              Navigator.restorablePushNamed(context, SettingsView.routeName);
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.circle),
-            onPressed: () {
-              // Navigate to the settings page. If the user leaves and returns
-              // to the app after it has been killed while running in the
-              // background, the navigation stack is restored.
-              Navigator.restorablePushNamed(context, DeviceScanner.routeName);
-            },
-          ),
+        actions: const [
+          PingIndicator(),
+          // IconButton(
+          //   icon: const Icon(Icons.settings),
+          //   onPressed: () {
+          //     // Navigate to the settings page. If the user leaves and returns
+          //     // to the app after it has been killed while running in the
+          //     // background, the navigation stack is restored.
+          //     Navigator.restorablePushNamed(context, SettingsView.routeName);
+          //   },
+          // ),
         ],
       ),
       drawer: MethodSidebar(controller: _controller),
@@ -145,7 +140,9 @@ class MethodSidebar extends StatelessWidget {
       },
       items: [
         const SidebarXItem(icon: Icons.input, label: 'Inputs'),
-        const SidebarXItem(icon: Icons.analytics, label: 'Figure'),
+        const SidebarXItem(icon: Icons.analytics, label: 'Ouputs'),
+        const SidebarXItem(icon: Icons.table_view, label: 'Data'),
+        const SidebarXItem(icon: Icons.image, label: 'Figures'),
         SidebarXItem(
           icon: Icons.settings,
           label: 'Settings',
@@ -157,21 +154,28 @@ class MethodSidebar extends StatelessWidget {
               ),
         ),
         SidebarXItem(
-          icon: Icons.device_unknown,
+          icon: Icons.device_hub,
+          label: 'Terminal',
+          selectable: false,
+          onTap:
+              () => Navigator.restorablePushNamed(context, Terminal.routeName),
+        ),
+        SidebarXItem(
+          icon: Icons.device_hub,
           label: 'Devices',
           selectable: false,
           onTap:
               () => Navigator.restorablePushNamed(
                 context,
-                DeviceScanner.routeName,
+                RecentDevices.routeName,
               ),
         ),
-        SidebarXItem(
-          icon: Icons.exit_to_app,
-          label: 'Exit',
-          selectable: false,
-          onTap: () => Navigator.of(context).pop(),
-        ),
+        // SidebarXItem(
+        //   icon: Icons.exit_to_app,
+        //   label: 'Exit',
+        //   selectable: false,
+        //   onTap: () => Navigator.of(context).pop(),
+        // ),
       ],
     );
   }
@@ -187,56 +191,458 @@ class _ScreensExampleWidget extends StatefulWidget {
 }
 
 class _ScreensExampleWidgetState extends State<_ScreensExampleWidget> {
-  late Map<String, dynamic> data;
+  late Map<dynamic, dynamic> data;
+  late Map<dynamic, dynamic> schema;
 
   @override
   void initState() {
     super.initState();
-    data = {
-      "name": "my name",
-      "time": 5.5,
-      "time_shown_unitprefix": "m",
-      "int": 8,
-      "bool": true,
-      "birthdate": "2000-01-01",
-      "run_time": 10000,
-      "meeting_datetime": "2024-11-17T14:30:00",
-      "gender": "Male",
-      "description": "",
-      "v": 2,
-      "v_shown_unitprefix": "",
-      "t": 2,
-      "t_shown_unitprefix": "",
-      "times": [2.0, 4.0, 5.0],
-      "times_shown_unitprefix": "",
-      "numbers": [2, 6, 9, 0, 8],
-      "xarr": [1.0, 4.0, 12.0],
-      "xarr_shown_unitprefix": "",
-      "varr": [1.0, 2.0, 4.0],
-      "varr_shown_unitprefix": "",
-      "tarr": [1.0, 2.0, 3.0],
-      "tarr_shown_unitprefix": "",
-      "normx": 4,
-      "normx_shown_unitprefix": "",
-      "intxarr": [1, 5],
-      "myobject0": {
-        "t": 1.0,
-        "t_shown_unitprefix": "",
-        "v": 2.0,
-        "v_shown_unitprefix": "",
-        "int": 3.0,
+    schema = {
+      "inputs": {
+        "title": "Sample Form",
+        "properties": {
+          "description": {
+            "type": "richtext",
+            "title": "my description",
+            "default": "",
+          },
+          "name": {
+            "type": "string",
+            "title": "My Name",
+            "description": "Enter your full name.",
+            "maxLength": 50,
+            "default": "",
+          },
+          "time": {
+            "type": "float",
+            "title": "My Time",
+            "description": "Enter time.",
+            "minimum": 0,
+            "maximum": 100,
+            "unit": "s",
+            "shown_unitprefix": "m",
+            "default": 0,
+          },
+          "x": {
+            "type": "float",
+            "title": "x",
+            "description": "Enter time.",
+            "minimum": 0,
+            "maximum": 100,
+            "unit": "m",
+            "shown_unitprefix": "m",
+            "default": 0,
+            "exp": ["v = x / t"],
+          },
+          "v": {
+            "type": "float",
+            "title": "v",
+            "description": "Enter time.",
+            "minimum": 0,
+            "maximum": 100,
+            "unit": "m/s",
+            "default": 0,
+            "exp": ["x = v * t"],
+          },
+          "t": {
+            "type": "float",
+            "title": "t",
+            "description": "Enter time.",
+            "minimum": 0,
+            "maximum": 100,
+            "unit": "s",
+            "shown_unitprefix": "",
+            "default": 0,
+            "exp": ["x = sqrt(t)", "int = t"],
+          },
+          "int": {
+            "type": "integer",
+            "title": "My Int",
+            "description": "Enter an integer value.",
+            "minimum": 1,
+            "maximum": 10,
+            "default": 1,
+          },
+          "bool": {
+            "type": "boolean",
+            "title": "My Bool",
+            "description": "Toggle the switch.",
+            "default": false,
+          },
+          "birthdate": {
+            "type": "date",
+            "title": "Birth Date",
+            "default": "2000-01-01",
+          },
+          "run_time": {"type": "duration", "title": "Run Time", "default": 0},
+          "meeting_datetime": {
+            "type": "datetime",
+            "title": "Meeting Date & Time",
+            "default": "2000-01-01",
+          },
+          "gender": {
+            "type": "enum",
+            "title": "Gender",
+            "enum": ["Male", "Female", "Other"],
+            "default": "Male",
+          },
+          "times": {
+            "type": "float[10]",
+            "title": "My Times",
+            "description": "Enter time.",
+            "minimum": -10,
+            "maximum": 10,
+            "unit": "s",
+            "shown_unitprefix": "m",
+            "default": [-4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0],
+            "defaultEntry": 0.0,
+          },
+          "numbers": {
+            "type": "integer[10]",
+            "title": "My numbers",
+            "description": "Enter number.",
+            "minimum": 0,
+            "maximum": 100,
+            "default": [0, 2, 6, 4, 2, 1, 1, 1, 1, 0],
+            "defaultEntry": 0,
+          },
+          "numbers2": {
+            "type": "integer[10]",
+            "title": "My numbers2",
+            "description": "Enter number.",
+            "minimum": 0,
+            "maximum": 100,
+            "default": [1, 2, 3, 4, 5, 5, 4, 3, 2, 1],
+            "defaultEntry": 0,
+          },
+          "plot1": {
+            "type": "plot",
+            "title": "My plot",
+            "plotType": "line",
+            "x": ["inputs.times"],
+            "y": ["inputs.numbers", "inputs.numbers2"],
+          },
+          "xarr": {
+            "type": "float[]",
+            "title": "x",
+            "description": "Enter x array.",
+            "minimum": 0,
+            "maximum": 100,
+            "unit": "m",
+            "shown_unitprefix": "",
+            "exp": ["normx = norm(xarr)"],
+            "default": [],
+            "defaultEntry": 0.0,
+          },
+          "normx": {
+            "type": "float",
+            "title": "normx",
+            "description": "Enter time.",
+            "minimum": 0,
+            "maximum": 20,
+            "unit": "m",
+            "shown_unitprefix": "m",
+            "default": 0.0,
+          },
+          "varr": {
+            "type": "float[]",
+            "title": "v",
+            "description": "Enter v array.",
+            "minimum": 0,
+            "maximum": 100,
+            "unit": "m/s",
+            "shown_unitprefix": "",
+            "default": [],
+            "defaultEntry": 0.0,
+            "exp": ["xarr = sqrt(varr) * 4"],
+          },
+          "tarr": {
+            "type": "float[]",
+            "title": "t",
+            "description": "Enter time array.",
+            "minimum": 0,
+            "maximum": 100,
+            "unit": "s",
+            "shown_unitprefix": "k",
+            "default": [],
+            "defaultEntry": 0.0,
+            "exp": ["xarr = floor(tarr)", "intxarr = floor(tarr)"],
+          },
+          "intxarr": {
+            "type": "integer[]",
+            "title": "t",
+            "description": "Enter time array.",
+            "minimum": 0,
+            "maximum": 50,
+            "default": [],
+            "defaultEntry": 0,
+          },
+          "myobject": {
+            "type": 'object',
+            "title": "my object",
+            "description": "Enter object.",
+            "default": [],
+            "properties": {
+              "t": {
+                "type": "float",
+                "title": "t",
+                "description": "Enter time.",
+                "minimum": 0,
+                "maximum": 100,
+                "unit": "s",
+                "shown_unitprefix": "m",
+                "default": 0,
+              },
+              "v": {
+                "type": "float",
+                "title": "v",
+                "description": "Enter voltage.",
+                "minimum": 0,
+                "maximum": 100,
+                "unit": "Volt",
+                "shown_unitprefix": "",
+                "default": 0,
+              },
+              "int": {
+                "type": "integer",
+                "title": "My Int",
+                "description": "Enter an integer value.",
+                "minimum": 1,
+                "maximum": 10,
+                "default": 1,
+              },
+            },
+          },
+          "myobjectlist": {
+            "type": 'object[]',
+            "title": "my object list",
+            "description": "Enter object.",
+            "default": [],
+            "properties": {
+              "t": {
+                "type": "float",
+                "title": "t",
+                "description": "Enter time.",
+                "minimum": 0,
+                "maximum": 100,
+                "unit": "s",
+                "shown_unitprefix": "m",
+                "default": 0,
+              },
+              "v": {
+                "type": "float",
+                "title": "v",
+                "description": "Enter voltage.",
+                "minimum": 0,
+                "maximum": 100,
+                "unit": "Volt",
+                "shown_unitprefix": "",
+                "default": 0,
+              },
+              "int": {
+                "type": "integer",
+                "title": "My Int",
+                "description": "Enter an integer value.",
+                "minimum": 1,
+                "maximum": 10,
+                "default": 1,
+              },
+            },
+          },
+          "plot2": {
+            "type": "plot",
+            "title": "My plot",
+            "plotType": "line",
+            "x": ["inputs.myobjectlist.t", "inputs.myobjectlist.v"],
+            "y": ["inputs.myobjectlist.t", "inputs.myobjectlist.v"],
+            "defaultX": "inputs.myobjectlist.v",
+            "defaultY": ["inputs.myobjectlist.t", "inputs.myobjectlist.v"],
+            "minX": 0,
+            "maxX": 'inputs.normx',
+            "minY": -1.0,
+            "zoomX": true,
+            "zoomY": false,
+            "x_shown_unitprefix": ["", "m"],
+            "y_shown_unitprefix": "m",
+          },
+        },
       },
-      "myobjectlist": [
-        {
+      "outputs": {
+        "properties": {
+          "time": {
+            "type": "float[]",
+            "title": "t",
+            "description": "The measured time.",
+            "unit": "s",
+            "shown_unitprefix": "m",
+          },
+          "voltage": {
+            "type": "float[]",
+            "title": "voltage",
+            "description": "The measured time.",
+            "unit": "V",
+            "shown_unitprefix": "m",
+          },
+          "real_voltage": {
+            "type": "float[]",
+            "title": "real voltage",
+            "description": "The measured time.",
+            "unit": "V",
+            "shown_unitprefix": "m",
+          },
+          "current": {
+            "type": "float[]",
+            "title": "current",
+            "description": "The measured time.",
+            "unit": "A",
+            "shown_unitprefix": "m",
+          },
+          "real_current": {
+            "type": "float[]",
+            "title": "real current",
+            "description": "The measured time.",
+            "unit": "A",
+            "shown_unitprefix": "m",
+          },
+          "plot1": {
+            "type": "plot",
+            "title": "Voltage",
+            "plotType": "line",
+            "x": ["outputs.time"],
+            "y": ["outputs.voltage", "outputs.real_voltage"],
+            "defaultY": ["outputs.voltage"],
+            "minY": -5.0,
+            "maxY": 5.0,
+            "x_shown_unitprefix": [""],
+            "y_shown_unitprefix": "",
+          },
+          "plot2": {
+            "type": "plot",
+            "title": "Current",
+            "plotType": "line",
+            "x": ["outputs.time"],
+            "y": ["outputs.current", "outputs.real_current"],
+            "defaultY": ["outputs.voltage"],
+            "minY": -5.0,
+            "maxY": 5.0,
+            "x_shown_unitprefix": [""],
+            "y_shown_unitprefix": "",
+          },
+        },
+      },
+    };
+    data = {
+      "inputs": {
+        "name": "my name",
+        "time": 5.5,
+        "time_shown_unitprefix": "m",
+        "int": 8,
+        "bool": true,
+        "birthdate": "2000-01-01",
+        "run_time": 10000,
+        "meeting_datetime": "2024-11-17T14:30:00",
+        "gender": "Male",
+        "description": "",
+        "v": 2,
+        "v_shown_unitprefix": "",
+        "t": 2,
+        "t_shown_unitprefix": "",
+        "xarr": [1.0, 4.0, 12.0],
+        "xarr_shown_unitprefix": "",
+        "varr": [1.0, 2.0, 4.0],
+        "varr_shown_unitprefix": "",
+        "tarr": [1.0, 2.0, 3.0],
+        "tarr_shown_unitprefix": "",
+        "normx": 4,
+        "normx_shown_unitprefix": "",
+        "intxarr": [1, 5],
+        "myobject0": {
           "t": 1.0,
           "t_shown_unitprefix": "",
           "v": 2.0,
           "v_shown_unitprefix": "",
           "int": 3.0,
         },
-        {"t": 4.0, "t_shown_unitprefix": "", "v": 5.0},
-        null,
-      ],
+        "myobjectlist": [
+          {
+            "t": 1.0,
+            "t_shown_unitprefix": "",
+            "v": 2.0,
+            "v_shown_unitprefix": "",
+            "int": 3.0,
+          },
+          {"t": 4.0, "t_shown_unitprefix": "", "v": 5.0},
+          null,
+        ],
+      },
+      "outputs": {
+        "time": [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0],
+        "time_shown_unitprefix": "",
+        "voltage": [-5.0, -4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0],
+        "voltage_shown_unitprefix": "",
+        "current": [-5.0, -4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0],
+        "current_shown_unitprefix": "",
+        "real_voltage": [
+          -5.1,
+          -4.2,
+          -3.1,
+          -2.01,
+          -1.1,
+          0.2,
+          1.1,
+          2.2,
+          3.1,
+          4.2,
+          5.1,
+        ],
+        "real_voltage_shown_unitprefix": "",
+        "real_current": [
+          -5.01,
+          -4.1,
+          -3.2,
+          -2.3,
+          -1.01,
+          0.1,
+          1.3,
+          2.01,
+          3.01,
+          4.2,
+          5.1,
+        ],
+        "real_current_shown_unitprefix": "",
+      },
+      "figures": {
+        "plot1": {
+          "type": "plot",
+          "title": "Current",
+          "plotType": "line",
+          "x": ["outputs.time"],
+          "y": ["outputs.voltage", "outputs.real_voltage"],
+          "defaultY": ["outputs.voltage"],
+          "x_shown_unitprefix": [""],
+          "y_shown_unitprefix": "",
+        },
+        "plot2": {
+          "type": "plot",
+          "title": "Current",
+          "plotType": "line",
+          "x": ["outputs.time"],
+          "y": ["outputs.current", "outputs.real_current"],
+          "defaultY": ["outputs.current"],
+          "x_shown_unitprefix": [""],
+          "y_shown_unitprefix": "",
+        },
+        "plot3": {
+          "type": "plot",
+          "title": "Current",
+          "plotType": "line",
+          "x": ["outputs.time"],
+          "y": ["outputs.current", "outputs.real_current"],
+          "defaultY": ["outputs.real_current"],
+          "x_shown_unitprefix": [""],
+          "y_shown_unitprefix": "",
+        },
+      },
     };
   }
 
@@ -251,242 +657,7 @@ class _ScreensExampleWidgetState extends State<_ScreensExampleWidget> {
             return ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 800),
               child: DynamicForm(
-                schema: const {
-                  "title": "Sample Form",
-                  "properties": {
-                    "description": {
-                      "type": "richtext",
-                      "title": "my description",
-                      "default": "",
-                    },
-                    "name": {
-                      "type": "string",
-                      "title": "My Name",
-                      "description": "Enter your full name.",
-                      "maxLength": 50,
-                      "default": "",
-                    },
-                    "time": {
-                      "type": "float",
-                      "title": "My Time",
-                      "description": "Enter time.",
-                      "minimum": 0,
-                      "maximum": 100,
-                      "unit": "s",
-                      "default": 0,
-                    },
-                    "x": {
-                      "type": "float",
-                      "title": "x",
-                      "description": "Enter time.",
-                      "minimum": 0,
-                      "maximum": 100,
-                      "unit": "m",
-                      "default": 0,
-                      "exp": ["v = x / t"],
-                    },
-                    "v": {
-                      "type": "float",
-                      "title": "v",
-                      "description": "Enter time.",
-                      "minimum": 0,
-                      "maximum": 100,
-                      "unit": "m/s",
-                      "default": 0,
-                      "exp": ["x = v * t"],
-                    },
-                    "t": {
-                      "type": "float",
-                      "title": "t",
-                      "description": "Enter time.",
-                      "minimum": 0,
-                      "maximum": 100,
-                      "unit": "s",
-                      "default": 0,
-                      "exp": ["x = sqrt(t)", "int = t"],
-                    },
-                    "int": {
-                      "type": "integer",
-                      "title": "My Int",
-                      "description": "Enter an integer value.",
-                      "minimum": 1,
-                      "maximum": 10,
-                      "default": 1,
-                    },
-                    "bool": {
-                      "type": "boolean",
-                      "title": "My Bool",
-                      "description": "Toggle the switch.",
-                      "default": false,
-                    },
-                    "birthdate": {
-                      "type": "date",
-                      "title": "Birth Date",
-                      "default": "2000-01-01",
-                    },
-                    "run_time": {
-                      "type": "duration",
-                      "title": "Run Time",
-                      "default": 0,
-                    },
-                    "meeting_datetime": {
-                      "type": "datetime",
-                      "title": "Meeting Date & Time",
-                      "default": "2000-01-01",
-                    },
-                    "gender": {
-                      "type": "enum",
-                      "title": "Gender",
-                      "enum": ["Male", "Female", "Other"],
-                      "default": "Male",
-                    },
-                    "times": {
-                      "type": "float[10]",
-                      "title": "My Times",
-                      "description": "Enter time.",
-                      "minimum": 0,
-                      "maximum": 100,
-                      "unit": "s",
-                      "default": 0.0,
-                    },
-                    "numbers": {
-                      "type": "integer[10]",
-                      "title": "My numbers",
-                      "description": "Enter number.",
-                      "minimum": 0,
-                      "maximum": 100,
-                      "default": 0,
-                    },
-                    "numbers2": {
-                      "type": "integer[10]",
-                      "title": "My numbers2",
-                      "description": "Enter number.",
-                      "minimum": 0,
-                      "maximum": 100,
-                      "default": 0,
-                    },
-                    "plot1": {
-                      "type": "plot",
-                      "title": "My plot",
-                      "plotType": "line",
-                      "x": ["times"],
-                      "y": ["numbers", "numbers2"],
-                    },
-                    "xarr": {
-                      "type": "float[]",
-                      "title": "x",
-                      "description": "Enter x array.",
-                      "minimum": 0,
-                      "maximum": 100,
-                      "unit": "m",
-                      "exp": ["normx = norm(xarr)"],
-                      "default": 0.0,
-                    },
-                    "normx": {
-                      "type": "float",
-                      "title": "normx",
-                      "description": "Enter time.",
-                      "minimum": 0,
-                      "maximum": 20,
-                      "unit": "m",
-                      "default": 0.0,
-                    },
-                    "varr": {
-                      "type": "float[]",
-                      "title": "v",
-                      "description": "Enter v array.",
-                      "minimum": 0,
-                      "maximum": 100,
-                      "unit": "m/s",
-                      "default": 0.0,
-                      "exp": ["xarr = sqrt(varr) * 4"],
-                    },
-                    "tarr": {
-                      "type": "float[]",
-                      "title": "t",
-                      "description": "Enter time array.",
-                      "minimum": 0,
-                      "maximum": 100,
-                      "unit": "s",
-                      "default": 0.0,
-                      "exp": ["xarr = floor(tarr)", "intxarr = floor(tarr)"],
-                    },
-                    "intxarr": {
-                      "type": "integer[]",
-                      "title": "t",
-                      "description": "Enter time array.",
-                      "minimum": 0,
-                      "maximum": 50,
-                      "default": 0,
-                    },
-                    "myobject": {
-                      "type": 'object',
-                      "title": "my object",
-                      "description": "Enter object.",
-                      "properties": {
-                        "t": {
-                          "type": "float",
-                          "title": "v",
-                          "description": "Enter time.",
-                          "minimum": 0,
-                          "maximum": 100,
-                          "unit": "s",
-                          "default": 0,
-                        },
-                        "v": {
-                          "type": "float",
-                          "title": "v",
-                          "description": "Enter voltage.",
-                          "minimum": 0,
-                          "maximum": 100,
-                          "unit": "Volt",
-                          "default": 0,
-                        },
-                        "int": {
-                          "type": "integer",
-                          "title": "My Int",
-                          "description": "Enter an integer value.",
-                          "minimum": 1,
-                          "maximum": 10,
-                          "default": 1,
-                        },
-                      },
-                    },
-                    "myobjectlist": {
-                      "type": 'object[]',
-                      "title": "my object list",
-                      "description": "Enter object.",
-                      "properties": {
-                        "t": {
-                          "type": "float",
-                          "title": "v",
-                          "description": "Enter time.",
-                          "minimum": 0,
-                          "maximum": 100,
-                          "unit": "s",
-                          "default": 0,
-                        },
-                        "v": {
-                          "type": "float",
-                          "title": "v",
-                          "description": "Enter voltage.",
-                          "minimum": 0,
-                          "maximum": 100,
-                          "unit": "Volt",
-                          "default": 0,
-                        },
-                        "int": {
-                          "type": "integer",
-                          "title": "My Int",
-                          "description": "Enter an integer value.",
-                          "minimum": 1,
-                          "maximum": 10,
-                          "default": 1,
-                        },
-                      },
-                    },
-                  },
-                },
+                schema: schema,
                 data: data,
                 onValueChange: (value) {
                   print(value);
@@ -497,10 +668,12 @@ class _ScreensExampleWidgetState extends State<_ScreensExampleWidget> {
               ),
             );
           case 1:
-            // return WebSocketDemo();
-            // return Plot(title: "plot");
-            return Text('Not implemented yet.');
+            return OutputFigures(schema: schema, data: data);
           case 2:
+            return OutputData(schema: schema, data: data);
+          case 3:
+            return Figures(schema: schema, data: data);
+          case 4:
             // return WebSocketDemo();
             return ListView.builder(
               padding: const EdgeInsets.only(top: 10),

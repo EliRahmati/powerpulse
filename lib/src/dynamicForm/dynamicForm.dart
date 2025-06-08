@@ -153,9 +153,9 @@ final actionColor = const Color(0xFF5F5FA7).withOpacity(0.6);
 final divider = Divider(color: white.withOpacity(0.3), height: 1);
 
 class DynamicForm extends StatefulWidget {
-  final Map<String, dynamic> schema;
-  final Map<String, dynamic> data;
-  final Function(Map<String, dynamic>) onValueChange;
+  final Map<dynamic, dynamic> schema;
+  final Map<dynamic, dynamic> data;
+  final Function(Map<dynamic, dynamic>) onValueChange;
 
   const DynamicForm({
     super.key,
@@ -171,7 +171,7 @@ class DynamicForm extends StatefulWidget {
 // Custom evaluator class for handling lists
 class CustomExpressionEvaluator extends ExpressionEvaluator {
   @override
-  dynamic eval(Expression expression, Map<String, dynamic> context) {
+  dynamic eval(Expression expression, Map<dynamic, dynamic> context) {
     var fulContext = {...context, ...functions};
     // Modify the eval method to support list element-wise multiplication
 
@@ -291,7 +291,7 @@ class CustomExpressionEvaluator extends ExpressionEvaluator {
       }
     }
 
-    var result = super.eval(expression, fulContext);
+    var result = super.eval(expression, fulContext.cast<String, dynamic>());
 
     return result; // Return the result for other cases
   }
@@ -303,64 +303,65 @@ class _DynamicFormState extends State<DynamicForm> {
   @override
   void initState() {
     super.initState();
-    if (checkData()) {
-      Future.delayed(Duration.zero, () async {
-        initData();
-      });
-    }
+    Future.delayed(Duration.zero, () async {
+      initData();
+    });
   }
 
   bool checkData() {
-    for (var entry in widget.schema['properties'].entries) {
+    for (var entry in widget.schema['inputs']['properties'].entries) {
       ArrayShape arrayShape = getShape(entry.value['type']);
       if (arrayShape.baseType == 'object') {
         if (arrayShape.depth == 0) {
-          if (widget.data[entry.key] == null) {
+          if (widget.data['inputs'][entry.key] == null) {
             return true;
           }
           for (var objectEntry in entry.value['properties'].entries) {
             var schema = objectEntry.value;
             var key = objectEntry.key;
             ArrayShape arrayShape = getShape(schema['type']);
-            if (widget.data[entry.key][key] == null) {
+            if (widget.data['inputs'][entry.key][key] == null) {
               return true;
             }
             if (arrayShape.baseType == 'float') {
               final unit = schema['unit'];
               if (unit != null &&
-                  widget.data[entry.key]['${key}_shown_unitprefix'] == null) {
+                  widget.data['inputs'][entry.key]['${key}_shown_unitprefix'] ==
+                      null) {
                 return true;
               }
             }
           }
         } else if (arrayShape.depth == 1) {
-          if (widget.data[entry.key] == null) {
+          if (widget.data['inputs'][entry.key] == null) {
             return true;
           }
           if (arrayShape.arrayDepths[0] > 0) {
-            if (widget.data[entry.key].length != arrayShape.arrayDepths[0]) {
+            if (widget.data['inputs'][entry.key].length !=
+                arrayShape.arrayDepths[0]) {
               return true;
             }
           }
           int n =
               arrayShape.arrayDepths[0] > 0
                   ? arrayShape.arrayDepths[0]
-                  : widget.data[entry.key].length;
+                  : widget.data['inputs'][entry.key].length;
           for (int i = 0; i < n; i++) {
-            if (get(widget.data[entry.key], i) == null) {
+            if (get(widget.data['inputs'][entry.key], i) == null) {
               return true;
             }
             for (var objectEntry in entry.value['properties'].entries) {
               var schema = objectEntry.value;
               var key = objectEntry.key;
               ArrayShape arrayShape = getShape(schema['type']);
-              if (widget.data[entry.key][i][key] == null) {
+              if (widget.data['inputs'][entry.key][i][key] == null) {
                 return true;
               }
               if (arrayShape.baseType == 'float') {
                 final unit = schema['unit'];
                 if (unit != null &&
-                    widget.data[entry.key][i]['${key}_shown_unitprefix'] ==
+                    widget.data['inputs'][entry
+                            .key][i]['${key}_shown_unitprefix'] ==
                         null) {
                   return true;
                 }
@@ -372,35 +373,19 @@ class _DynamicFormState extends State<DynamicForm> {
       } else {
         var schema = entry.value;
         var key = entry.key;
-        if (widget.data[key] == null) {
+        if (widget.data['inputs'][key] == null) {
           return true;
         }
         if (arrayShape.baseType == 'float') {
           final unit = schema['unit'];
-          if (unit != null && widget.data['${key}_shown_unitprefix'] == null) {
+          if (unit != null &&
+              widget.data['inputs']['${key}_shown_unitprefix'] == null) {
             return true;
           }
         }
       }
     }
     return false;
-  }
-
-  void setInitData(
-    Map<String, dynamic> schema,
-    Map<String, dynamic> data,
-    String key,
-  ) {
-    ArrayShape arrayShape = getShape(schema['type']);
-    if (data[key] == null) {
-      data[key] = schema['default'];
-    }
-    if (arrayShape.baseType == 'float') {
-      final unit = schema['unit'];
-      if (unit != null && data['${key}_shown_unitprefix'] == null) {
-        data['${key}_shown_unitprefix'] = "";
-      }
-    }
   }
 
   T? get<T>(List<T>? list, int index) {
@@ -411,24 +396,26 @@ class _DynamicFormState extends State<DynamicForm> {
   }
 
   void initData() {
-    widget.schema['properties'].entries.forEach((entry) {
+    widget.schema['inputs']['properties'].entries.forEach((entry) {
       ArrayShape arrayShape = getShape(entry.value['type']);
       if (arrayShape.baseType == 'object') {
         if (arrayShape.depth == 0) {
           Map<String, dynamic> x = {};
-          widget.data[entry.key] ??= x;
+          widget.data['inputs'][entry.key] ??= x;
           entry.value['properties'].entries.forEach((objectEntry) {
             var schema = objectEntry.value;
             var key = objectEntry.key;
             ArrayShape arrayShape = getShape(schema['type']);
-            if (widget.data[entry.key][key] == null) {
-              widget.data[entry.key][key] = schema['default'];
+            if (widget.data['inputs'][entry.key][key] == null) {
+              widget.data['inputs'][entry.key][key] = schema['default'];
             }
             if (arrayShape.baseType == 'float') {
               final unit = schema['unit'];
               if (unit != null &&
-                  widget.data[entry.key]['${key}_shown_unitprefix'] == null) {
-                widget.data[entry.key]['${key}_shown_unitprefix'] = "";
+                  widget.data['inputs'][entry.key]['${key}_shown_unitprefix'] ==
+                      null) {
+                widget.data['inputs'][entry.key]['${key}_shown_unitprefix'] =
+                    schema['shown_unitprefix'] ?? '';
               }
             }
           });
@@ -436,89 +423,98 @@ class _DynamicFormState extends State<DynamicForm> {
           int n =
               arrayShape.arrayDepths[0] > 0
                   ? arrayShape.arrayDepths[0]
-                  : widget.data[entry.key].length;
+                  : widget.data['inputs'][entry.key].length;
           List<Map<String, dynamic>> emptyArray = [];
           for (int i = 0; i < arrayShape.arrayDepths[0]; i++) {
             Map<String, dynamic> x = {};
             emptyArray.add(x);
           }
-          widget.data[entry.key] ??= emptyArray;
+          widget.data['inputs'][entry.key] ??=
+              entry.value['default'] ?? emptyArray;
 
           List<Map<String, dynamic>> xArray = [];
           for (int i = 0; i < n; i++) {
             Map<String, dynamic> x = {};
-            if (get(widget.data[entry.key], i) != null) {
-              xArray.add(get(widget.data[entry.key], i));
+            if (get(widget.data['inputs'][entry.key], i) != null) {
+              xArray.add(get(widget.data['inputs'][entry.key], i));
             } else {
               xArray.add(x);
             }
           }
-          widget.data[entry.key] = xArray;
+          widget.data['inputs'][entry.key] = xArray;
 
           for (int i = 0; i < n; i++) {
             Map<String, dynamic> x = {};
             if (arrayShape.arrayDepths[0] < 0) {
-              if (get(widget.data[entry.key], i) == null) {
-                widget.data[entry.key].add(x);
+              if (get(widget.data['inputs'][entry.key], i) == null) {
+                widget.data['inputs'][entry.key].add(x);
               }
             }
             entry.value['properties'].entries.forEach((objectEntry) {
               var schema = objectEntry.value;
               var key = objectEntry.key;
               ArrayShape arrayShape = getShape(schema['type']);
-              if (widget.data[entry.key][i][key] == null) {
-                widget.data[entry.key][i][key] = schema['default'];
+              if (widget.data['inputs'][entry.key][i][key] == null) {
+                widget.data['inputs'][entry.key][i][key] = schema['default'];
               }
               if (arrayShape.baseType == 'float') {
                 final unit = schema['unit'];
                 if (unit != null &&
-                    widget.data[entry.key][i]['${key}_shown_unitprefix'] ==
+                    widget.data['inputs'][entry
+                            .key][i]['${key}_shown_unitprefix'] ==
                         null) {
-                  widget.data[entry.key][i]['${key}_shown_unitprefix'] = "";
+                  widget.data['inputs'][entry
+                          .key][i]['${key}_shown_unitprefix'] =
+                      schema['shown_unitprefix'] ?? '';
                 }
               }
             });
           }
         }
+      } else if (arrayShape.baseType == 'plot') {
       } else {
         var schema = entry.value;
         var key = entry.key;
 
         if (arrayShape.depth == 0) {
-          if (widget.data[key] == null) {
-            widget.data[key] = schema['default'];
+          if (widget.data['inputs'][key] == null) {
+            widget.data['inputs'][key] = schema['default'];
           }
         } else if (arrayShape.depth == 1) {
           List<num> emptyArray = [];
           for (int i = 0; i < arrayShape.arrayDepths[0]; i++) {
-            emptyArray.add(schema['default']);
+            emptyArray.add(schema['defaultEntry']);
           }
-          widget.data[entry.key] ??= emptyArray;
+          widget.data['inputs'][entry.key] ??= schema['default'] ?? emptyArray;
           List<num> xArray = [];
           int n =
               arrayShape.arrayDepths[0] > 0
                   ? arrayShape.arrayDepths[0]
-                  : widget.data[entry.key].length;
+                  : widget.data['inputs'][entry.key].length;
           for (int i = 0; i < n; i++) {
-            if (get(widget.data[entry.key], i) != null) {
-              xArray.add(get(widget.data[entry.key], i));
+            if (get(widget.data['inputs'][entry.key], i) != null) {
+              xArray.add(get(widget.data['inputs'][entry.key], i));
             } else {
-              xArray.add(schema['default']);
+              xArray.add(schema['defaultEntry']);
             }
           }
-          widget.data[entry.key] = xArray;
+          widget.data['inputs'][entry.key] = xArray;
         }
 
         if (arrayShape.baseType == 'float') {
           final unit = schema['unit'];
-          if (unit != null && widget.data['${key}_shown_unitprefix'] == null) {
-            widget.data['${key}_shown_unitprefix'] = "";
+          if (unit != null &&
+              widget.data['inputs']['${key}_shown_unitprefix'] == null) {
+            widget.data['inputs']['${key}_shown_unitprefix'] =
+                schema['shown_unitprefix'] ?? '';
           }
         }
       }
     });
 
-    widget.schema['properties'].entries.forEach((entry) {
+    print(widget.data);
+
+    widget.schema['inputs']['properties'].entries.forEach((entry) {
       final exp = entry.value['exp'];
       if (exp != null && exp is List && exp.isNotEmpty) {
         evaluateAndUpdate(exp, [entry.key]);
@@ -542,10 +538,10 @@ class _DynamicFormState extends State<DynamicForm> {
         // Parse the right-hand side expression
         Expression rhsExpression = Expression.parse(rhs);
         var evaluator = CustomExpressionEvaluator();
-        var result = evaluator.eval(rhsExpression, widget.data);
+        var result = evaluator.eval(rhsExpression, widget.data['inputs']);
 
         ArrayShape arrayShape = getShape(
-          widget.schema['properties'][lhs]['type'],
+          widget.schema['inputs']['properties'][lhs]['type'],
         );
         if (arrayShape.baseType == 'integer') {
           result = withList(toInt)(result);
@@ -556,10 +552,10 @@ class _DynamicFormState extends State<DynamicForm> {
         // Use the ExpressionEvaluator to evaluate the right-hand side with the object context
         // Update the object with the result (set the variable value)
         if (!done.contains(lhs)) {
-          final exp = widget.schema['properties'][lhs]['exp'];
+          final exp = widget.schema['inputs']['properties'][lhs]['exp'];
           done.add(lhs);
           setState(() {
-            widget.data[lhs] = result;
+            widget.data['inputs'][lhs] = result;
             if (exp != null && exp is List && exp.isNotEmpty) {
               evaluateAndUpdate(exp, done);
             }
@@ -648,8 +644,8 @@ class _DynamicFormState extends State<DynamicForm> {
 
   Widget _buildField(
     String key,
-    Map<String, dynamic> schema,
-    Map<String, dynamic> data,
+    Map<dynamic, dynamic> schema,
+    Map<dynamic, dynamic> data,
   ) {
     ArrayShape arrayShape = getShape(schema['type']);
 
@@ -671,7 +667,7 @@ class _DynamicFormState extends State<DynamicForm> {
             },
           );
         } else {
-          return SizedBox.shrink();
+          return const SizedBox.shrink();
         }
       case 'richtext': // Handle rich text case here
         return MarkdownEditor(
@@ -749,11 +745,11 @@ class _DynamicFormState extends State<DynamicForm> {
                     ElevatedButton(
                       onPressed: () {
                         setState(() {
-                          data[key].add(schema['default']);
+                          data[key].add(schema['defaultEntry']);
                           widget.onValueChange(widget.data);
                         });
                       },
-                      child: Text('Add'),
+                      child: const Text('Add'),
                     ),
                   ],
                 ),
@@ -761,7 +757,7 @@ class _DynamicFormState extends State<DynamicForm> {
             );
           }
         } else {
-          return SizedBox.shrink();
+          return const SizedBox.shrink();
         }
       case 'float':
         final unit = schema['unit'];
@@ -854,11 +850,11 @@ class _DynamicFormState extends State<DynamicForm> {
                     ElevatedButton(
                       onPressed: () {
                         setState(() {
-                          data[key].add(schema['default']);
+                          data[key].add(schema['defaultEntry']);
                           widget.onValueChange(widget.data);
                         });
                       },
-                      child: Text('Add'),
+                      child: const Text('Add'),
                     ),
                   ],
                 ),
@@ -866,7 +862,7 @@ class _DynamicFormState extends State<DynamicForm> {
             );
           }
         } else {
-          return SizedBox.shrink();
+          return const SizedBox.shrink();
         }
       case 'boolean':
         return Row(
@@ -1011,7 +1007,7 @@ class _DynamicFormState extends State<DynamicForm> {
                           );
                         }).toList(),
                         IconButton(
-                          icon: Icon(Icons.delete),
+                          icon: const Icon(Icons.delete),
                           onPressed: () {
                             data[key].removeAt(index);
                             widget.onValueChange(widget.data);
@@ -1036,7 +1032,8 @@ class _DynamicFormState extends State<DynamicForm> {
                           if (arrayShape.baseType == 'float') {
                             final unit = subSchema['unit'];
                             if (unit != null) {
-                              x['${subKey}_shown_unitprefix'] = "";
+                              x['${subKey}_shown_unitprefix'] =
+                                  subSchema['shown_unitprefix'] ?? '';
                             }
                           }
                         });
@@ -1056,12 +1053,31 @@ class _DynamicFormState extends State<DynamicForm> {
           return const SizedBox.shrink();
         }
       case 'plot':
-        return Plot(
-          title: schema['title'],
-          x: schema['x'],
-          y: schema['y'],
-          schema: widget.schema,
-          data: widget.data,
+        return Card(
+          elevation: 5, // Shadow of the card
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10), // Rounded corners
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Plot(
+              title: schema['title'],
+              x: schema['x'],
+              y: schema['y'],
+              schema: widget.schema,
+              data: widget.data,
+              minX: schema['minX'],
+              maxX: schema['maxX'],
+              minY: schema['minY'],
+              maxY: schema['maxY'],
+              zoomX: schema['zoomX'],
+              zoomY: schema['zoomY'],
+              defaultX: schema['defaultX'],
+              defaultY: schema['defaultY'],
+              xShownUnitprefix: schema['x_shown_unitprefix'],
+              yShownUnitprefix: schema['y_shown_unitprefix'],
+            ),
+          ),
         );
       default:
         return const SizedBox.shrink();
@@ -1071,39 +1087,39 @@ class _DynamicFormState extends State<DynamicForm> {
   Map<String, String?> doValidation() {
     final Map<String, String?> errors = {};
 
-    for (var entry in widget.schema['properties'].entries) {
+    for (var entry in widget.schema['inputs']['properties'].entries) {
       var key = entry.key;
       var schema = entry.value;
       ArrayShape arrayShape = getShape(schema['type']);
 
       switch (arrayShape.baseType) {
         case 'string':
-          var error = textValidator(widget.data[key], schema);
+          var error = textValidator(widget.data['inputs'][key], schema);
           if (error != null) {
             errors[key] = error;
           } else {
             errors.remove(key);
           }
         case 'richtext':
-          if (widget.data[key] == null) {
+          if (widget.data['inputs'][key] == null) {
             errors[key] = 'The value cannot be null.';
           } else {
             errors.remove(key);
           }
         case 'integer':
-          if (widget.data[key] == null) {
+          if (widget.data['inputs'][key] == null) {
             errors[key] = 'The value cannot be null.';
           } else {
             if (arrayShape.depth == 0) {
-              var error = numValidator(widget.data[key], schema);
+              var error = numValidator(widget.data['inputs'][key], schema);
               if (error != null) {
                 errors[key] = error;
               } else {
                 errors.remove(key);
               }
             } else if (arrayShape.depth == 1) {
-              if (widget.data[key] is List) {
-                List<dynamic> list = widget.data[key];
+              if (widget.data['inputs'][key] is List) {
+                List<dynamic> list = widget.data['inputs'][key];
                 for (int index = 0; index < list.length; index++) {
                   var item = list[index];
                   var error = numValidator(item, schema);
@@ -1120,19 +1136,19 @@ class _DynamicFormState extends State<DynamicForm> {
             }
           }
         case 'float':
-          if (widget.data[key] == null) {
+          if (widget.data['inputs'][key] == null) {
             errors[key] = 'The value cannot be null.';
           } else {
             if (arrayShape.depth == 0) {
-              var error = numValidator(widget.data[key], schema);
+              var error = numValidator(widget.data['inputs'][key], schema);
               if (error != null) {
                 errors[key] = error;
               } else {
                 errors.remove(key);
               }
             } else if (arrayShape.depth == 1) {
-              if (widget.data[key] is List) {
-                List<dynamic> list = widget.data[key];
+              if (widget.data['inputs'][key] is List) {
+                List<dynamic> list = widget.data['inputs'][key];
                 for (int index = 0; index < list.length; index++) {
                   var item = list[index];
                   var error = numValidator(item, schema);
@@ -1149,16 +1165,16 @@ class _DynamicFormState extends State<DynamicForm> {
             }
           }
         case 'boolean':
-          if (widget.data[key] == null) {
+          if (widget.data['inputs'][key] == null) {
             errors[key] = 'The value cannot be null.';
           } else {
             errors.remove(key);
           }
         case 'date':
-          if (widget.data[key] == null) {
+          if (widget.data['inputs'][key] == null) {
             errors[key] = 'The value cannot be null.';
           } else {
-            var error = dateTimeValidator(widget.data[key]);
+            var error = dateTimeValidator(widget.data['inputs'][key]);
             if (error != null) {
               errors[key] = error;
             } else {
@@ -1166,10 +1182,10 @@ class _DynamicFormState extends State<DynamicForm> {
             }
           }
         case 'duration':
-          if (widget.data[key] == null) {
+          if (widget.data['inputs'][key] == null) {
             errors[key] = 'The value cannot be null.';
           } else {
-            var error = durationValidator(widget.data[key]);
+            var error = durationValidator(widget.data['inputs'][key]);
             if (error != null) {
               errors[key] = error;
             } else {
@@ -1177,10 +1193,10 @@ class _DynamicFormState extends State<DynamicForm> {
             }
           }
         case 'datetime':
-          if (widget.data[key] == null) {
+          if (widget.data['inputs'][key] == null) {
             errors[key] = 'The value cannot be null.';
           } else {
-            var error = dateTimeValidator(widget.data[key]);
+            var error = dateTimeValidator(widget.data['inputs'][key]);
             if (error != null) {
               errors[key] = error;
             } else {
@@ -1188,13 +1204,13 @@ class _DynamicFormState extends State<DynamicForm> {
             }
           }
         case 'enum':
-          if (widget.data[key] == null) {
+          if (widget.data['inputs'][key] == null) {
             errors[key] = 'The value cannot be null.';
           } else {
             errors.remove(key);
           }
         case 'object':
-          if (widget.data[key] == null) {
+          if (widget.data['inputs'][key] == null) {
             errors[key] = 'The value cannot be null.';
           } else {
             errors.remove(key);
@@ -1213,7 +1229,7 @@ class _DynamicFormState extends State<DynamicForm> {
   @override
   Widget build(BuildContext context) {
     if (checkData()) {
-      return Scaffold();
+      return const Scaffold();
     }
     var errors = doValidation();
     return Scaffold(
@@ -1228,8 +1244,8 @@ class _DynamicFormState extends State<DynamicForm> {
                 Row(
                   children: [
                     Text(
-                      widget.schema['title'],
-                      style: TextStyle(
+                      widget.schema['inputs']['title'],
+                      style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
@@ -1237,10 +1253,14 @@ class _DynamicFormState extends State<DynamicForm> {
                   ],
                 ),
                 const SizedBox(height: 10),
-                ...widget.schema['properties'].entries.map((entry) {
+                ...widget.schema['inputs']['properties'].entries.map((entry) {
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 15),
-                    child: _buildField(entry.key, entry.value, widget.data),
+                    child: _buildField(
+                      entry.key,
+                      entry.value,
+                      widget.data['inputs'],
+                    ),
                   );
                 }).toList(),
                 const SizedBox(height: 20),

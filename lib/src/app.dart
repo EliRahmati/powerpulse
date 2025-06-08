@@ -2,57 +2,81 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:powerpulse/src/methods/methods.dart';
+import 'package:powerpulse/src/methods/start_page.dart';
 
 import 'sample_feature/sample_item_details_view.dart';
-import 'sample_feature/sample_item_list_view.dart';
-import 'methods/method_list_view.dart';
-import 'methods/method_page.dart';
 import 'settings/settings_controller.dart';
 import 'settings/settings_view.dart';
 import 'screens/login_screen.dart';
 import 'package:powerpulse/src/devices/device_view.dart';
 import 'package:powerpulse/src/devices/devices_view.dart';
+import 'package:powerpulse/src/devices/recent_devices.dart';
 import 'package:powerpulse/src/dynamicForm/method_app.dart';
-import 'package:powerpulse/src/network/websocket.dart';
-
+import 'package:powerpulse/src/dynamicForm/measurment.dart';
+import 'package:powerpulse/src/network/terminal.dart';
+import 'package:powerpulse/src/network/websocket_client.dart';
+import 'package:powerpulse/src/devices/device_status.dart';
+import 'package:hive/hive.dart';
 import 'globals.dart' as globals;
+import 'package:provider/provider.dart';
+import 'package:powerpulse/src/app_provider.dart';
 
 const primaryColor = Color(0xFF685BFF);
 const canvasColor = Color(0xFF2E2E48);
-const scaffoldBackgroundColor = Color(0xFF464667);
-const accentCanvasColor = Color(0xFF3E3E61);
-const white = Colors.white;
-final actionColor = const Color(0xFF5F5FA7).withOpacity(0.6);
-final divider = Divider(color: white.withOpacity(0.3), height: 1);
 
 /// The Widget that configures your application.
-class MyApp extends StatelessWidget {
-  const MyApp({
-    super.key,
-    required this.settingsController,
-  });
-
+class MyApp extends StatefulWidget {
   final SettingsController settingsController;
+
+  const MyApp({super.key, required this.settingsController});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+
+    globals.terminalData = '';
+    Device? lastDevice = getFirstActiveDevice();
+    if (lastDevice != null) {
+      AppProvider appProvider = Provider.of<AppProvider>(
+        context,
+        listen: false,
+      );
+      appProvider.createWebsocket(lastDevice.ip, lastDevice.port);
+      globals.client?.connect();
+    }
+  }
+
+  Device? getFirstActiveDevice() {
+    Box box = Hive.box('devices');
+    final storedDevices = box.values.toList();
+
+    for (var deviceMap in storedDevices) {
+      if (deviceMap['isActive'] == true) {
+        return Device(
+          name: deviceMap['name'],
+          ip: deviceMap['ip'],
+          port: deviceMap['port'] ?? 0,
+          isActive: deviceMap['isActive'] ?? false,
+        );
+      }
+    }
+
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Glue the SettingsController to the MaterialApp.
-    //
-    // The ListenableBuilder Widget listens to the SettingsController for changes.
-    // Whenever the user updates their settings, the MaterialApp is rebuilt.
     return ListenableBuilder(
-      listenable: settingsController,
+      listenable: widget.settingsController,
       builder: (BuildContext context, Widget? child) {
         return MaterialApp(
-          // Providing a restorationScopeId allows the Navigator built by the
-          // MaterialApp to restore the navigation stack when a user leaves and
-          // returns to the app after it has been killed while running in the
-          // background.
           restorationScopeId: 'app',
 
-          // Provide the generated AppLocalizations to the MaterialApp. This
-          // allows descendant Widgets to display the correct translations
-          // depending on the user's locale.
           localizationsDelegates: const [
             AppLocalizations.delegate,
             GlobalMaterialLocalizations.delegate,
@@ -63,37 +87,14 @@ class MyApp extends StatelessWidget {
             Locale('en', ''), // English, no country code
           ],
 
-          // Use AppLocalizations to configure the correct application title
-          // depending on the user's locale.
-          //
-          // The appTitle is defined in .arb files found in the localization
-          // directory.
-          onGenerateTitle: (BuildContext context) =>
-              AppLocalizations.of(context)!.appTitle,
+          onGenerateTitle:
+              (BuildContext context) => AppLocalizations.of(context)!.appTitle,
 
-          // Define a light and dark color theme. Then, read the user's
-          // preferred ThemeMode (light, dark, or system default) from the
-          // SettingsController to display the correct theme.
           theme: ThemeData(),
-          // theme: ThemeData(
-          //   primaryColor: primaryColor,
-          //   canvasColor: canvasColor,
-          //   scaffoldBackgroundColor: scaffoldBackgroundColor,
-          //   textTheme: const TextTheme(
-          //     headlineSmall: TextStyle(
-          //       color: Colors.white,
-          //       fontSize: 46,
-          //       fontWeight: FontWeight.w800,
-          //     ),
-          //   ),
-          // ),
           darkTheme: ThemeData.dark(),
-          themeMode: settingsController.themeMode,
+          themeMode: widget.settingsController.themeMode,
 
-          // Define a function to handle named routes in order to support
-          // Flutter web url navigation and deep linking.
           onGenerateRoute: (RouteSettings routeSettings) {
-            //ModalRoute.of(context)?.settings.arguments
             final arguments =
                 (routeSettings.arguments ?? <String, dynamic>{}) as Map;
 
@@ -102,61 +103,42 @@ class MyApp extends StatelessWidget {
               builder: (BuildContext context) {
                 switch (routeSettings.name) {
                   case SettingsView.routeName:
-                    return SettingsView(controller: settingsController);
+                    return SettingsView(controller: widget.settingsController);
                   case SampleItemDetailsView.routeName:
                     return const SampleItemDetailsView();
                   case DeviceScanner.routeName:
                     return DeviceScanner();
+                  case RecentDevices.routeName:
+                    return RecentDevices();
+                  case Terminal.routeName:
+                    return Terminal();
                   case DeviceInfoView.routeName:
                     if (arguments.isEmpty) {
                       return const DeviceInfoView(ip: null, deviceName: null);
                     } else {
                       return DeviceInfoView(
-                          ip: arguments['ip'],
-                          deviceName: arguments['deviceName']);
+                        ip: arguments['ip'],
+                        deviceName: arguments['deviceName'],
+                      );
                     }
+                  case Methods.routeName:
+                    return Methods();
                   case MethodApp.routeName:
                     return MethodApp(
-                        type: arguments['type'],
-                        id: arguments['id'],
-                        title: arguments['title']);
+                      type: arguments['type'],
+                      id: arguments['id'],
+                      title: arguments['title'],
+                    );
+                  case Measurment.routeName:
+                    return Measurment(
+                      type: arguments['type'],
+                      schema: arguments['schema'],
+                      data: arguments['data'],
+                    );
                   default:
-                    // return SidebarXExampleApp();
-                    // return const DynamicForm(schema: {
-                    //   "title": "Sample Form",
-                    //   "type": "object",
-                    //   "properties": {
-                    //     "name": {
-                    //       "type": "string",
-                    //       "title": "My Name",
-                    //       "description": "Enter your full name."
-                    //     },
-                    //     "time": {
-                    //       "type": "float",
-                    //       "title": "My Time",
-                    //       "description": "Enter time."
-                    //     },
-                    //     "int": {
-                    //       "type": "integer",
-                    //       "title": "My int",
-                    //       "description": "Enter time."
-                    //     },
-                    //     "bool": {
-                    //       "type": "boolean",
-                    //       "title": "My bool",
-                    //       "description": "Enter time."
-                    //     }
-                    //   }
-                    // }, data: {
-                    //   "name": "my name",
-                    //   "time": 5.5,
-                    //   "int": 8,
-                    //   "bool": true,
-                    // });
                     if (globals.user != null) {
-                      return Methods();
+                      return StartPage();
                     } else {
-                      // return WebSocketScreen();
                       return LoginScreen();
                     }
                 }

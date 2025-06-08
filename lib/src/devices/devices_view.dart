@@ -6,6 +6,8 @@ import 'package:powerpulse/src/devices/device_view.dart';
 
 class DeviceScanner extends StatefulWidget {
   static const routeName = '/devices';
+
+  const DeviceScanner({super.key});
   @override
   _DeviceScannerState createState() => _DeviceScannerState();
 }
@@ -42,28 +44,32 @@ class _DeviceScannerState extends State<DeviceScanner> {
       return;
     }
     final String subnet = address.substring(0, address.lastIndexOf('.'));
-    final stream = HostScannerService.instance.getAllPingableDevices(subnet,
-        progressCallback: (progress) {
-      scanningProgress = progress;
-    });
+    final stream = HostScannerService.instance.getAllPingableDevices(
+      subnet,
+      progressCallback: (progress) {
+        scanningProgress = progress;
+      },
+    );
 
-    stream.listen((host) {
-      updateDevices(host);
-    }, onDone: () {
-      setState(() {
-        isScanning = false;
-      });
-    }, onError: (err) {
-      // ignore errors to finish the scan
-    }); // Don't forget to cancel the stream when not in use.
+    stream.listen(
+      (host) {
+        updateDevices(host);
+      },
+      onDone: () {
+        setState(() {
+          isScanning = false;
+        });
+      },
+      onError: (err) {
+        // ignore errors to finish the scan
+      },
+    ); // Don't forget to cancel the stream when not in use.
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Network Scanner'),
-      ),
+      appBar: AppBar(title: const Text('Network Scanner')),
       body: Column(
         children: [
           ElevatedButton(
@@ -75,27 +81,28 @@ class _DeviceScannerState extends State<DeviceScanner> {
               itemCount: devices.entries.length,
               itemBuilder: (context, index) {
                 return ListTile(
-                    title: Text(devices.values.toList()[index].deviceName),
-                    subtitle: Text(devices.values.toList()[index].iPAddress),
-                    leading: const CircleAvatar(
-                      // Display the Flutter Logo image asset.
-                      foregroundImage:
-                          AssetImage('assets/images/flutter_logo.png'),
+                  title: Text(devices.values.toList()[index].deviceName),
+                  subtitle: Text(devices.values.toList()[index].iPAddress),
+                  leading: const CircleAvatar(
+                    // Display the Flutter Logo image asset.
+                    foregroundImage: AssetImage(
+                      'assets/images/flutter_logo.png',
                     ),
-                    onTap: () {
-                      // Navigate to the details page. If the user leaves and returns to
-                      // the app after it has been killed while running in the
-                      // background, the navigation stack is restored.
-                      Navigator.restorablePushNamed(
-                        context,
-                        DeviceInfoView.routeName,
-                        arguments: {
-                          'ip': devices.values.toList()[index].iPAddress,
-                          'deviceName':
-                              devices.values.toList()[index].deviceName
-                        },
-                      );
-                    });
+                  ),
+                  onTap: () {
+                    // Navigate to the details page. If the user leaves and returns to
+                    // the app after it has been killed while running in the
+                    // background, the navigation stack is restored.
+                    Navigator.restorablePushNamed(
+                      context,
+                      DeviceInfoView.routeName,
+                      arguments: {
+                        'ip': devices.values.toList()[index].iPAddress,
+                        'deviceName': devices.values.toList()[index].deviceName,
+                      },
+                    );
+                  },
+                );
               },
             ),
           ),

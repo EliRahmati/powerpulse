@@ -46,9 +46,11 @@ class _DateTimeFieldState extends State<DateTimeField> {
     }
     // Initialize the controller with the formatted DateTime string
     _controller = TextEditingController(
-        text: error != null
-            ? widget.value
-            : DateFormat(_format).format(DateTime.parse(widget.value!)));
+      text:
+          error != null
+              ? widget.value
+              : DateFormat(_format).format(DateTime.parse(widget.value!)),
+    );
   }
 
   @override
@@ -81,7 +83,7 @@ class _DateTimeFieldState extends State<DateTimeField> {
       DateTime.parse(DateFormat(_format).parseStrict(value).toIso8601String());
       return null; // If no exception occurs, the input is valid
     } catch (e) {
-      return 'Invalid date-time format. Please use ${_format}';
+      return 'Invalid date-time format. Please use $_format';
     }
   }
 
@@ -92,14 +94,15 @@ class _DateTimeFieldState extends State<DateTimeField> {
       try {
         // Try to parse the input value using the provided format
         DateTime enteredDate = DateFormat(_format).parse(value);
-        widget.onValueChange(enteredDate
-            .toIso8601String()); // Pass the valid DateTime to the callback
+        widget.onValueChange(
+          enteredDate.toIso8601String(),
+        ); // Pass the valid DateTime to the callback
         setState(() {
           _errorMessage = null;
         });
       } catch (e) {
         setState(() {
-          _errorMessage = 'Invalid date-time format. Please use ${_format}';
+          _errorMessage = 'Invalid date-time format. Please use $_format';
         });
       }
     } else {
@@ -132,18 +135,21 @@ class _DateTimeFieldState extends State<DateTimeField> {
             if (selectedDateTime != null) {
               if (widget.type == DateTimeFieldType.date) {
                 setState(() {
-                  _controller.text =
-                      DateFormat(_format).format(selectedDateTime);
-                  widget.onValueChange(selectedDateTime
-                      .toIso8601String()); // Update with the new DateTime
+                  _controller.text = DateFormat(
+                    _format,
+                  ).format(selectedDateTime);
+                  widget.onValueChange(
+                    selectedDateTime.toIso8601String(),
+                  ); // Update with the new DateTime
                   _errorMessage = null; // Clear any error messages
                 });
               } else if (widget.type == DateTimeFieldType.datetime) {
                 // Show the time picker with the initial time based on the current selected DateTime
                 final selectedTime = await showTimePicker(
                   context: context,
-                  initialTime:
-                      TimeOfDay.fromDateTime(tryToParse(widget.value!)),
+                  initialTime: TimeOfDay.fromDateTime(
+                    tryToParse(widget.value!),
+                  ),
                 );
 
                 if (selectedTime != null) {
@@ -156,10 +162,12 @@ class _DateTimeFieldState extends State<DateTimeField> {
                   );
 
                   setState(() {
-                    _controller.text =
-                        DateFormat(_format).format(combinedDateTime);
-                    widget.onValueChange(combinedDateTime
-                        .toIso8601String()); // Update with the new DateTime
+                    _controller.text = DateFormat(
+                      _format,
+                    ).format(combinedDateTime);
+                    widget.onValueChange(
+                      combinedDateTime.toIso8601String(),
+                    ); // Update with the new DateTime
                     _errorMessage = null; // Clear any error messages
                   });
                 }

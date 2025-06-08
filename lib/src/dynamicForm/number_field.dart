@@ -51,9 +51,11 @@ class _NumberFieldState extends State<NumberField> {
   void initState() {
     super.initState();
     _controller = TextEditingController(
-        text: widget.unit == null
-            ? widget.value.toString()
-            : convertValue(widget.value, widget.unitPrefix!).toString());
+      text:
+          widget.unit == null
+              ? widget.value.toString()
+              : convertValue(widget.value, widget.unitPrefix!).toString(),
+    );
   }
 
   @override
@@ -76,12 +78,14 @@ class _NumberFieldState extends State<NumberField> {
   }
 
   String? _numValidator(num value) {
-    var minInUnit = widget.unit != null
-        ? '${convertValue(widget.min!, widget.unitPrefix!)} (${widget.unitPrefix}${widget.unit})'
-        : widget.min;
-    var maxInUnit = widget.unit != null
-        ? '${convertValue(widget.max!, widget.unitPrefix!)} (${widget.unitPrefix}${widget.unit})'
-        : widget.max;
+    var minInUnit =
+        widget.unit != null && widget.min != null
+            ? '${convertValue(widget.min!, widget.unitPrefix!)} (${widget.unitPrefix}${widget.unit})'
+            : widget.min;
+    var maxInUnit =
+        widget.unit != null && widget.max != null
+            ? '${convertValue(widget.max!, widget.unitPrefix!)} (${widget.unitPrefix}${widget.unit})'
+            : widget.max;
     if (widget.max == null && widget.min != null) {
       if (value < (widget.min as num)) {
         return 'Value must be greater than $minInUnit';
@@ -102,11 +106,13 @@ class _NumberFieldState extends State<NumberField> {
     if (widget.onUnitPrefixChange != null && newPrefix != null) {
       widget.onUnitPrefixChange!(newPrefix);
       setState(() {
-        _controller.text = widget.unit == null
-            ? widget.value.toString()
-            : convertValue(widget.value, newPrefix).toString();
+        _controller.text =
+            widget.unit == null
+                ? widget.value.toString()
+                : convertValue(widget.value, newPrefix).toString();
         _controller.selection = TextSelection.collapsed(
-            offset: _controller.text.length); // To move the cursor to the end
+          offset: _controller.text.length,
+        ); // To move the cursor to the end
         _errorMessage = null;
       });
     }
@@ -156,48 +162,58 @@ class _NumberFieldState extends State<NumberField> {
         Expanded(
           child: TextFormField(
             controller: TextEditingController(
-                text: widget.unit == null
-                    ? widget.value.toString()
-                    : convertValue(widget.value, widget.unitPrefix!)
-                        .toString()),
-            keyboardType: widget.type == NumberFieldType.integer
-                ? TextInputType.number
-                : const TextInputType.numberWithOptions(decimal: true),
+              text:
+                  widget.unit == null
+                      ? widget.value.toString()
+                      : convertValue(
+                        widget.value,
+                        widget.unitPrefix!,
+                      ).toString(),
+            ),
+            keyboardType:
+                widget.type == NumberFieldType.integer
+                    ? TextInputType.number
+                    : const TextInputType.numberWithOptions(decimal: true),
             decoration: InputDecoration(
               labelText: widget.title,
               errorText: _errorMessage,
-              suffixIcon: widget.unit != null
-                  ? GestureDetector(
-                      onTapDown: (details) async {
-                        final offset = details.globalPosition;
-                        final selectedPrefix = await showMenu<String>(
-                          context: context,
-                          position: RelativeRect.fromLTRB(
-                            offset.dx,
-                            offset.dy - 40,
-                            MediaQuery.of(context).size.width - offset.dx - 40,
-                            MediaQuery.of(context).size.height - offset.dy,
+              suffixIcon:
+                  widget.unit != null
+                      ? GestureDetector(
+                        onTapDown: (details) async {
+                          final offset = details.globalPosition;
+                          final selectedPrefix = await showMenu<String>(
+                            context: context,
+                            position: RelativeRect.fromLTRB(
+                              offset.dx,
+                              offset.dy - 40,
+                              MediaQuery.of(context).size.width -
+                                  offset.dx -
+                                  40,
+                              MediaQuery.of(context).size.height - offset.dy,
+                            ),
+                            items:
+                                _unitPrefixes.map((String prefix) {
+                                  return PopupMenuItem<String>(
+                                    value: prefix,
+                                    child: Text('$prefix${widget.unit}'),
+                                  );
+                                }).toList(),
+                          );
+                          if (selectedPrefix != null) {
+                            _onUnitPrefixChange(selectedPrefix);
+                          }
+                        },
+                        child: Chip(
+                          label: Text('${widget.unitPrefix}${widget.unit}'),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              20,
+                            ), // Rounded border
                           ),
-                          items: _unitPrefixes.map((String prefix) {
-                            return PopupMenuItem<String>(
-                              value: prefix,
-                              child: Text('$prefix${widget.unit}'),
-                            );
-                          }).toList(),
-                        );
-                        if (selectedPrefix != null) {
-                          _onUnitPrefixChange(selectedPrefix);
-                        }
-                      },
-                      child: Chip(
-                        label: Text('${widget.unitPrefix}${widget.unit}'),
-                        shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(20), // Rounded border
                         ),
-                      ),
-                    )
-                  : null,
+                      )
+                      : null,
             ),
             inputFormatters: [_inputFormatter()],
             onChanged: (value) {
